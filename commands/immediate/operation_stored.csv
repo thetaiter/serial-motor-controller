@@ -1,0 +1,18 @@
+C,C,,,,Clear all commands from currently selected program.
+D,D,,,,Decelerate to a stop(interrupts current index/program in progress).
+E,E,,,,Enable On-Line mode with echo "on".
+F,F,,,,Enable On-Line mode with echo "off".
+G,G,,,,Enable On-Line mode with echo off Grouping a <cr> with "^", ":", "W", "O" responses; Also Go after waiting or holding.
+H,H,,,,Put Controller on Hold (stop after each command and wait for go).
+K,K,,,,Kill operation/program in progress and reset user outputs.
+N,N,,,,Null (zero) motors 1, 2, 3, 4 absolute position registers.
+Q,Q,,,,Quit On-Line mode (return to Local mode).
+R,R,,,,Run currently selected program.
+!,!,,,,Record motor positions for later recall with "x", "y" commands.
+rsm,rsm,,,,Run save memory (saves setup/program values to nonvolatile memory).
+res,res,,,,Software reset control.
+del,del,,,,Delete last command.
+[i1, i2...],[i1, i2...],,,,Send data to Slave through Master (two VXM controllers connected by VXM bus).
+setD0,setD0,,,,Set VXM back to factory defaults (All programs, settings, motor selections will be erased).
+PMx,PMx,x,[1-4],1,Select Program number x, x = 0 to 4.
+PM-x,PM-x,x,[1-4],1,Select and clear all commands from Program number x, x = 0 to 4.
