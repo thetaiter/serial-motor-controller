@@ -120,7 +120,6 @@ class MotorControlApp(tk.Frame):
                 for l in lines:
                     if not l.__contains__(name):
                         file.write(l)
-                        print(l)
 
         if self.setup == 'true':
             self.selectedCommandType.set(self.commandTypeMenu['menu'].entrycget(0, 'label'))
