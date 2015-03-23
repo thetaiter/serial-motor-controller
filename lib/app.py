@@ -2,6 +2,7 @@
 import sys
 import os
 import glob
+import shutil
 from collections import namedtuple
 
 # Import local libraries
@@ -31,7 +32,6 @@ NO_PORTS_MESSAGE =  'No Ports Detected'
 ENTER_COMMAND_MESSAGE = 'Enter a custom command here'
 INFO_PRESET_MESSAGE = 'Info will be printed here'
 AVAILABLE_BAUDS = ["9600", "19200", "38400"]
-COMMANDS = []
 
 # Custom structures for Command and Command Type
 CommandType = namedtuple("CommandType", ["name", "path", "commands"])
@@ -57,7 +57,7 @@ class MotorControlApp(tk.Frame):
 
         print("\nProgram loaded successfully.\n")
 
-    # Load the commands from files into the global COMMANDS array
+    # Load the commands from files into the global self.COMMANDS array
     def loadCommands(self):
         print("Loading commands...")
 
@@ -70,13 +70,13 @@ class MotorControlApp(tk.Frame):
             # Split into tokens
             tokens = line.split(',')
 
-            # Append current command type to COMMANDS array
-            COMMANDS.append(CommandType(name=tokens[0], path=tokens[1].replace('->', PATH_DELIMITER).replace('\n', ''), commands=[]))
+            # Append current command type to self.COMMANDS array
+            self.COMMANDS.append(CommandType(name=tokens[0], path=tokens[1].replace('->', PATH_DELIMITER).replace('\n', ''), commands=[]))
 
-            print("\tLoading %s commands..." % COMMANDS[count].name)
+            print("\tLoading %s commands..." % self.COMMANDS[count].name)
 
             # Open current command type's commands path and iterate through all lines
-            file = open(COMMANDS[count].path, 'r')
+            file = open(self.COMMANDS[count].path, 'r')
             for line in file.readlines():
                 # Split into 5 tokens separated by the first 5 commas
                 split = line.split(',', 5)
@@ -93,21 +93,21 @@ class MotorControlApp(tk.Frame):
                     split[5] = split[7]
 
                 # Append current command to the command type's commands array
-                COMMANDS[count].commands.append(Command(split[0], split[1], split[2], split[3], split[4], split[5]))
+                self.COMMANDS[count].commands.append(Command(split[0], split[1], split[2], split[3], split[4], split[5]))
 
-                print("\t\t%s command loaded successfully." % COMMANDS[count].commands[-1].name)
+                print("\t\t%s command loaded successfully." % self.COMMANDS[count].commands[-1].name)
 
             # Close the file
             file.close()
 
-            print("\t%s commands were loaded successfully." % COMMANDS[count].name)
+            print("\t%s commands were loaded successfully." % self.COMMANDS[count].name)
 
             # Increment the line counter
             count += 1
 
     # Clear the global commands array
     def clearCommands(self):
-        COMMANDS = []
+        self.COMMANDS = []
         print("\tCommands cleared successfully.")
 
     # Calculate window position on screen
@@ -225,7 +225,7 @@ class MotorControlApp(tk.Frame):
         self.commandTypeMenu['menu'].delete(0, 'end')
 
         # For each command type, add an entry to the menu
-        for type in COMMANDS:
+        for type in self.COMMANDS:
             self.commandTypeMenu['menu'].add_command(label=type.name, command=lambda value=type.name:self.setTypeAndPopulateCommandsMenu(value))
             print("\t\t%s command type loaded successfully." % type.name)
 
@@ -280,12 +280,12 @@ class MotorControlApp(tk.Frame):
 
     # Get the command type object with the specified name
     def getCommandType(self, ctype):
-        # For each command type in COMMANDS check if name is equal to specified name
+        # For each command type in self.COMMANDS check if name is equal to specified name
         count = 0
-        for commandType in COMMANDS:
+        for commandType in self.COMMANDS:
             # If name = specified name, return the command type object
             if commandType.name == ctype:
-                return COMMANDS[count]
+                return self.COMMANDS[count]
 
             # Increment counter
             count += 1
@@ -296,7 +296,7 @@ class MotorControlApp(tk.Frame):
     def editCommand(self, command):
         print("\tEdit button clicked for command ->", command)
         if command is not None:
-            self.createCommandWindow = create_command.CreateCommandApp(tk.Tk(), COMMANDS, command, self.selectedCommandType.get(), lambda: self.populateCommandMenu())
+            self.createCommandWindow = create_command.CreateCommandApp(tk.Tk(), self.COMMANDS, command, self.selectedCommandType.get(), lambda: self.populateCommandMenu())
             self.createCommandWindow.run()
         else:
             self.info.set("Invalid command selected.")
@@ -310,7 +310,7 @@ class MotorControlApp(tk.Frame):
 
             # If command exists, delete it from the list of commands
             if typeIndex != -1 and comIndex != -1:
-                del(COMMANDS[typeIndex].commands[comIndex])
+                del(self.COMMANDS[typeIndex].commands[comIndex])
 
             # Read file where command originated from
             file = open(self.getPath(self.selectedCommandType.get()), 'r')
@@ -324,13 +324,15 @@ class MotorControlApp(tk.Frame):
                         file.write(line)
                 file.close()
 
-        print("\tCommand '%s' was deleted successfully." % command.name)
+            self.populateCommandMenu()
 
-    # Get the index of the command's type in the global COMMANDS array and the index of the command within the commands array of that type
+            print("\tCommand '%s' was deleted successfully." % command.name)
+
+    # Get the index of the command's type in the global self.COMMANDS array and the index of the command within the commands array of that type
     def getCommandIndex(self, command):
-        # For each type in COMMANDS, iterate through commands
+        # For each type in self.COMMANDS, iterate through commands
         typeCount = 0
-        for ctype in COMMANDS:
+        for ctype in self.COMMANDS:
             comCount = 0
             for com in ctype.commands:
                 # If command name is same as desired command, return index of type and command
@@ -346,7 +348,7 @@ class MotorControlApp(tk.Frame):
 
     # Get the file path of the commands that are of the specified type
     def getPath(self, ctype):
-        for ct in COMMANDS:
+        for ct in self.COMMANDS:
             if ct.name == ctype:
                 return ct.path
 
@@ -410,7 +412,7 @@ class MotorControlApp(tk.Frame):
 
     # Show the create command window
     def createCommand(self):
-        self.createCommandWindow = create_command.CreateCommandApp(tk.Tk(), COMMANDS, None, "", lambda: self.populateCommandMenu())
+        self.createCommandWindow = create_command.CreateCommandApp(tk.Tk(), self.COMMANDS, None, "", lambda: self.populateCommandMenu())
         self.createCommandWindow.run()
 
     # Show the open command type dialog
@@ -426,8 +428,8 @@ class MotorControlApp(tk.Frame):
 
             print("\tLoading %s commands..." % name)
 
-            # Append new type to global COMMANDS array
-            COMMANDS.append(CommandType(name=name, path=f.name, commands=[]))
+            # Append new type to global self.COMMANDS array
+            self.COMMANDS.append(CommandType(name=name, path=f.name, commands=[]))
 
             # For each line in the file, create a command entry
             for line in f.readlines():
@@ -466,10 +468,11 @@ class MotorControlApp(tk.Frame):
     def createEditMenu(self):
         self.editMenu = tk.Menu(self.frame, tearoff=0)
         self.editMenu.add_command(label="Edit Command...", command=lambda: self.editCommand(self.getCommand()))
-        self.editMenu.add_command(label="Rename Command  Type...", command=self.renameCommandType)
+        self.editMenu.add_command(label="Rename Command Type...", command=self.renameCommandType)
         self.editMenu.add_separator()
         self.editMenu.add_command(label="Delete Command", command=lambda: self.deleteCommand(self.getCommand()))
         self.editMenu.add_command(label="Delete Command Type", command=self.deleteCommandType)
+        self.editMenu.add_command(label="Reload Default Commands", command=self.reloadDefaults)
 
         # Add edit menu to menu bar
         self.menuBar.add_cascade(label="Edit", menu=self.editMenu)
@@ -500,9 +503,9 @@ class MotorControlApp(tk.Frame):
                     file.write(line)
             file.close()
 
-            # Get type index and delete type from COMMANDS array
+            # Get type index and delete type from self.COMMANDS array
             typeIndex, dummy = self.getCommandIndex(self.getCommand())
-            del COMMANDS[typeIndex]
+            del self.COMMANDS[typeIndex]
 
             # Repopulate menus
             self.populateCommandTypeMenu()
@@ -510,6 +513,54 @@ class MotorControlApp(tk.Frame):
             self.populateCommandMenu()
 
             print("\tCommand type '%s' has been removed successfully.")
+
+    # Reload the default commands
+    def reloadDefaults(self):
+        # Set text to prompt user with
+        text = "Are you sure you would like to reload the default commands? This will overwrite any changes you have made to the following default types, and cannot be undone:\n\nOperation Stored, Status Request, Input/Output, Looping/Branching, Motor, Pausing, Set"
+
+        # Display messagebox to ask user if they are sure they want to load defaults
+        if messagebox.askyesno("Reload Defaults?", text):
+            print("\tReloading default commands...")
+
+            # Remove existing version of default command types
+            print("\t\tRemoving existing command type files...")
+            if os.path.isdir("commands/immediate") and os.path.exists("commands/immediate"):
+                shutil.rmtree("commands/immediate")
+            if os.path.isdir("commands/program_stored") and os.path.exists("commands/program_stored"):
+                shutil.rmtree("commands/program_stored")
+            if os.path.isfile("commands/set.csv"):
+                os.remove("commands/set.csv")
+
+            # Copy default files to commands directory
+            print("\t\tCopying default files...")
+            shutil.copytree("commands/_defaults/immediate", "commands/immediate")
+            shutil.copytree("commands/_defaults/program_stored", "commands/program_stored")
+            shutil.copyfile("commands/_defaults/set.csv", "commands/set.csv")
+
+            # If there is not a custom file, cope the one from defautls
+            if not os.path.isfile("commands/custom.csv"):
+                shutil.copyfile("commands/_defaults/custom.csv", "commands/custom.csv")
+
+            # Open the current and default types files and compare them
+            file = open("commands/_defaults/_types.csv", 'r')
+            defTypes = file.readlines()
+            file.close()
+
+            file = open("commands/_types.csv", 'r')
+            types = file.readlines()
+            file.close()
+
+            # For each type in the default that is not in the current types file, add it to the current types file
+            for ctype in defTypes:
+                if not ctype in types:
+                    file = open("commands/_types.csv", 'a')
+                    file.write(ctype)
+
+            # Clear current commands and reload from _types.csv
+            self.loadCommands()
+            self.populateCommandTypeMenu()
+            self.populateCommandMenu()
 
     # Create the serial menu
     def createSerialMenu(self):
@@ -637,8 +688,8 @@ class MotorControlApp(tk.Frame):
         self.immediateMenu.delete(0, 'end')
         self.programStoredMenu.delete(0, 'end')
 
-        # For each command type object in COMMANDS, check the name and place it in the appropriate menu
-        for ctype in COMMANDS:
+        # For each command type object in self.COMMANDS, check the name and place it in the appropriate menu
+        for ctype in self.COMMANDS:
             # For first two types, place is immediate menu
             if ctype.name == "Operation Stored" or ctype.name == "Status Request":
                 tempMenu = self.immediateMenu
