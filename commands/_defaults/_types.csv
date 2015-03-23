@@ -1,0 +1,8 @@
+Operation Stored,commands->immediate->operation_stored.csv
+Status Request,commands->immediate->status_request.csv
+Motor,commands->program_stored->motor.csv
+Looping/Branching,commands->program_stored->looping_branching.csv
+Pausing,commands->program_stored->pausing.csv
+Input/Output,commands->program_stored->input_output.csv
+Set,commands->set.csv
+Custom,commands->custom.csv
