@@ -47,6 +47,7 @@ class MotorControlApp(tk.Frame):
         tk.Frame.__init__(self, master)
 
         self.setup = 'false'
+        self.program = ''
 
         # Load commands into the program
         self.loadCommands()
@@ -467,7 +468,13 @@ class MotorControlApp(tk.Frame):
     # Load a program from a file
     def loadProgram(self):
         # TODO
-        print("\tloadProgram() called.")
+        f = filedialog.askopenfile('r', defaultextension='.txt')
+
+        self.program = f.readlines()
+
+        print(self.program)
+
+        f.close()
 
     # Show the save command type as dialog
     def saveCommandType(self, As='true'):

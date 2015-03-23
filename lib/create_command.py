@@ -440,7 +440,7 @@ class CreateCommandApp(tk.Frame):
             if self.getCommandType(self.typeText.get()) is not None:
                 messagebox.showerror("Duplicate Name", "Error: The type name you have entered already exists.")
                 return 'false'
-        else:
+        elif self.edit == 'false':
             for command in self.getCommandType(self.selectedType.get()).commands:
                 if self.nameEntry.get() == command.name:
                     messagebox.showerror("Duplicate Name", "Error: The command name you have entered already exists in this type. Please enter a new name to continue.")
