@@ -234,7 +234,7 @@ class CreateCommandApp(tk.Frame):
 
                 # Update _types.csv
                 with open("commands%s_types.csv" % PATH_DELIMITER, 'a') as file:
-                    file.write("%s,%s\n" % (self.typeText.get(), path))
+                    file.write("%s,%s\n" % (self.typeText.get(), path.replace(PATH_DELIMITER, '->')))
                     file.close()
 
                 # Append type to commands
