@@ -73,6 +73,8 @@ class MotorControlApp(tk.Frame):
             # Append current command type to COMMANDS array
             COMMANDS.append(CommandType(name=tokens[0], path=tokens[1].replace('->', PATH_DELIMITER).replace('\n', ''), commands=[]))
 
+            print("\tLoading %s commands..." % COMMANDS[count].name)
+
             # Open current command type's commands path and iterate through all lines
             file = open(COMMANDS[count].path, 'r')
             for line in file.readlines():
@@ -92,6 +94,8 @@ class MotorControlApp(tk.Frame):
 
                 # Append current command to the command type's commands array
                 COMMANDS[count].commands.append(Command(split[0], split[1], split[2], split[3], split[4], split[5]))
+
+                print("\t\t%s command loaded successfully." % COMMANDS[count].commands[-1].name)
 
             # Close the file
             file.close()
@@ -292,7 +296,7 @@ class MotorControlApp(tk.Frame):
     def editCommand(self, command):
         print("\tEdit button clicked for command ->", command)
         if command is not None:
-            self.createCommandWindow = create_command.CreateCommandApp(tk.Tk(), COMMANDS, command, self.selectedCommandType.get())
+            self.createCommandWindow = create_command.CreateCommandApp(tk.Tk(), COMMANDS, command, self.selectedCommandType.get(), lambda: self.populateCommandMenu())
             self.createCommandWindow.run()
         else:
             self.info.set("Invalid command selected.")
@@ -300,7 +304,7 @@ class MotorControlApp(tk.Frame):
     # Delete the specified command
     def deleteCommand(self, command):
         # Display messagebox to alert user of deletion
-        if messagebox.askyesno('Delete Command?', "Are you sure you would like to delete tthe commands '%s'?\nThis will be permanent." % command.name):
+        if messagebox.askyesno('Delete Command?', "Are you sure you would like to delete the command '%s'?\nThis will be permanent." % command.name):
             # Get indexes of type and command
             typeIndex, comIndex = self.getCommandIndex(command)
 
@@ -406,7 +410,7 @@ class MotorControlApp(tk.Frame):
 
     # Show the create command window
     def createCommand(self):
-        self.createCommandWindow = create_command.CreateCommandApp(tk.Tk(), COMMANDS)
+        self.createCommandWindow = create_command.CreateCommandApp(tk.Tk(), COMMANDS, None, "", lambda: self.populateCommandMenu())
         self.createCommandWindow.run()
 
     # Show the open command type dialog
@@ -418,7 +422,7 @@ class MotorControlApp(tk.Frame):
         if f is not None:
             # Extract name from path string
             name = f.name.split('/')
-            name = name[len(name)-1].replace('.csv', '').title()
+            name = name[len(name)-1].replace('.csv', '').replace('_', ' ').title()
 
             print("\tLoading %s commands..." % name)
 
@@ -429,6 +433,7 @@ class MotorControlApp(tk.Frame):
             for line in f.readlines():
                 split = line.split(',', 5)
                 self.getCommandType(name).commands.append(Command(name=split[0], command=split[1], variables=split[2], possible=split[3], values=split[4], description=split[5]))
+                print("\t\t%s command loaded successfully." % self.getCommandType(name).commands[-1].name)
 
             print("\t%s commands loaded successfully." % name)
 
@@ -448,7 +453,12 @@ class MotorControlApp(tk.Frame):
 
             # Write each command to the file
             for command in self.getCommandsOfType(self.selectedCommandType.get()):
-                f.write("%s,%s,%s,%s,%s,%s\n" % (" ".join(command.name.split()), " ".join(command.command.split()), command.variables, command.possible, command.values, command.description.replace('\n', '')))
+                if not command.possible:
+                    possible = ''
+                else:
+                    possible = command.possible
+
+                f.write("%s,%s,%s,%s,%s,%s\n" % (" ".join(command.name.split()), " ".join(command.command.split()), command.variables, possible, command.values, command.description.replace('\n', '')))
 
         print("\tCommand type saved successfully.")
 
@@ -456,8 +466,9 @@ class MotorControlApp(tk.Frame):
     def createEditMenu(self):
         self.editMenu = tk.Menu(self.frame, tearoff=0)
         self.editMenu.add_command(label="Edit Command...", command=lambda: self.editCommand(self.getCommand()))
-        self.editMenu.add_command(label="Delete Command", command=lambda: self.deleteCommand(self.getCommand()))
         self.editMenu.add_command(label="Rename Command  Type...", command=self.renameCommandType)
+        self.editMenu.add_separator()
+        self.editMenu.add_command(label="Delete Command", command=lambda: self.deleteCommand(self.getCommand()))
         self.editMenu.add_command(label="Delete Command Type", command=self.deleteCommandType)
 
         # Add edit menu to menu bar

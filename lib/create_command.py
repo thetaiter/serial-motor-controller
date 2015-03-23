@@ -36,7 +36,7 @@ CommandType = namedtuple("CommandType", ["name", "path", "commands"])
 # Class for the create command app
 class CreateCommandApp(tk.Frame):
     # Constructor Initialization function
-    def __init__(self, master, commands, command=None, type=""):
+    def __init__(self, master, commands, command=None, type="", callback=None):
         # Initialize the TK frame
         tk.Frame.__init__(self, master)
 
@@ -53,6 +53,8 @@ class CreateCommandApp(tk.Frame):
             self.command = command
             self.edit = 'true'
             self.type = type
+
+        self.callback = callback
 
         # Setup the window
         self.setupWindow()
@@ -251,7 +253,7 @@ class CreateCommandApp(tk.Frame):
             self.saved = 'true'
 
             # Close the create command window
-            self.quit()
+            self.quitApp()
         else:
             # Resume focus on create command window
             self.master.focus_force()
@@ -488,6 +490,9 @@ class CreateCommandApp(tk.Frame):
         if self.saved == 'false' or self.checkForChanges() == 'true':
             if messagebox.askyesno("Save Command?", "Would you like to save this command?"):
                 self.saveCommand()
+
+        # Run the callback command
+        self.callback()
 
         # Close the application
         self.quit()
