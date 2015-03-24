@@ -36,22 +36,31 @@ CommandType = namedtuple("CommandType", ["name", "path", "commands"])
 # Class for the create command app
 class CreateCommandApp(tk.Frame):
     # Constructor Initialization function
-    def __init__(self, master, commands, command=None):
+    def __init__(self, master, commands, command=None, type="", callback=None):
         # Initialize the TK frame
         tk.Frame.__init__(self, master)
 
         # Pull commands into app
         self.commands = commands
 
+        self.saved = 'false'
+        self.edit = 'false'
+
+        # Initialize command
+        if command is None:
+            self.command = Command("", "", "", "", "", "")
+        else:
+            self.command = command
+            self.edit = 'true'
+            self.type = type
+
+        self.callback = callback
+
         # Setup the window
         self.setupWindow()
 
         # Set initial status and saved values
         self.status = 'initiated'
-        self.saved = 'false'
-
-        # Initialize command
-        self.command = Command("New Command", "", "", "", "", "")
 
     # Setup the tkinter window and frame
     def setupWindow(self):
@@ -136,6 +145,15 @@ class CreateCommandApp(tk.Frame):
         self.saveButton = tk.Button(self.frame, text='Save Command', command=self.checkAndSave)
         self.saveButton.place(x=(WINDOW_SIZE[0]/2)-150/2, y=WINDOW_SIZE[1]-30, width=150)
 
+        if self.edit == 'true':
+            self.nameEntry.insert(0, self.command.name)
+            self.commandEntry.insert(0, self.command.command)
+            self.variablesEntry.insert(0, self.command.variables)
+            self.possibleEntry.insert(0, str(self.command.possible).replace('[', '').replace(']', ''))
+            self.valuesEntry.insert(0, self.command.values)
+            self.descriptionEntry.insert(0, self.command.description)
+            self.selectedType.set(self.type)
+
         # Set method for when user clicks the window's 'x' button
         self.master.protocol("WM_DELETE_WINDOW", self.quitApp)
 
@@ -203,6 +221,9 @@ class CreateCommandApp(tk.Frame):
     def saveCommand(self):
         # If the entries are valid and not saved yet, save the command else do not save
         if self.verifyEntries() == 'true' and self.saved == 'false':
+            if self.edit == 'true':
+                self.deleteCommand()
+
             # Import entries into self variable
             self.command = Command(self.nameEntry.get(), self.commandEntry.get(), self.variablesEntry.get(), self.possibleEntry.get(), self.valuesEntry.get(), self.descriptionEntry.get())
 
@@ -213,7 +234,7 @@ class CreateCommandApp(tk.Frame):
 
                 # Update _types.csv
                 with open("commands%s_types.csv" % PATH_DELIMITER, 'a') as file:
-                    file.write("%s,%s" % (self.typeText.get(), path))
+                    file.write("%s,%s\n" % (self.typeText.get(), path.replace(PATH_DELIMITER, '->')))
                     file.close()
 
                 # Append type to commands
@@ -225,17 +246,62 @@ class CreateCommandApp(tk.Frame):
 
             # Open command type file and add new command
             with open(path, 'a') as file:
-                file.write("%s,%s,%s,[%s],%s,%s\n" % (self.command.name, self.command.command, self.command.variables, self.command.possible, self.command.values, self.command.description))
+                file.write("%s,%s,%s,[%s],%s,%s\n" % (self.command.name, self.command.command, self.command.variables, self.command.possible, self.command.values, self.command.description.replace('\n', '')))
                 file.close()
 
             # Set saved to true
             self.saved = 'true'
 
             # Close the create command window
-            self.quit()
+            self.quitApp()
         else:
             # Resume focus on create command window
             self.master.focus_force()
+
+    # Delete the specified command
+    def deleteCommand(self):
+        # Get indexes of type and command
+        typeIndex, comIndex = self.getCommandIndex()
+
+        # If command exists, delete it from the list of commands
+        if typeIndex != -1 and comIndex != -1:
+            del(self.commands[typeIndex].commands[comIndex])
+
+        # Read file where command originated from
+        file = open(self.getPath(self.type), 'r')
+        lines = file.readlines()
+        file.close()
+
+        # Overwrite the file with all entries except desired command to delete
+        with open(self.getPath(self.type), 'w') as file:
+            for line in lines:
+                if not line.startswith(self.command.name):
+                    file.write(line)
+            file.close()
+
+    # Get the index of the command's type in the global COMMANDS array and the index of the command within the commands array of that type
+    def getCommandIndex(self):
+        # For each type in COMMANDS, iterate through commands
+        typeCount = 0
+        for ctype in self.commands:
+            comCount = 0
+            for command in ctype.commands:
+                # If command name is same as desired command, return index of type and command
+                if command.name == self.command.name:
+                    return typeCount, comCount
+                # Incrememnt command counter
+                comCount += 1
+            # Incrememnt type counter
+            typeCount += 1
+
+        # If command was not found, return negative values
+        return -1, -1
+
+    # Get the file path of the commands that are of the specified type
+    def getPath(self, ctype):
+        for ct in self.commands:
+            if ct.name == ctype:
+                return ct.path
 
     # Find specific chars in a string
     def findCharsInString(self, string, chars):
@@ -365,10 +431,20 @@ class CreateCommandApp(tk.Frame):
             return 'false'
 
         # If New Type... is selected and no type name is entered, display messagebox and return false
-        if self.selectedType.get() == "New Type..." and (not self.typeText.get() or not self.typeText.get().replace(" ", "")):
-            self.typeText.set("")
-            messagebox.showerror("No Type", "Error: You must enter the name of your new type if you have 'New Type' selected.")
-            return 'false'
+        if self.selectedType.get() == "New Type...":
+            if not self.typeText.get() or not self.typeText.get().replace(" ", ""):
+                self.typeText.set("")
+                messagebox.showerror("No Type", "Error: You must enter the name of your new type if you have 'New Type' selected.")
+                return 'false'
+
+            if self.getCommandType(self.typeText.get()) is not None:
+                messagebox.showerror("Duplicate Name", "Error: The type name you have entered already exists.")
+                return 'false'
+        elif self.edit == 'false':
+            for command in self.getCommandType(self.selectedType.get()).commands:
+                if self.nameEntry.get() == command.name:
+                    messagebox.showerror("Duplicate Name", "Error: The command name you have entered already exists in this type. Please enter a new name to continue.")
+                    return 'false'
 
         # If all validations pass, return true
         return 'true'
@@ -389,7 +465,7 @@ class CreateCommandApp(tk.Frame):
             values = self.valuesEntry.get()
 
         # If nothing has changed, return false
-        if self.command.name == self.nameEntry.get() and self.command.command == self.commandEntry.get() and self.command.variables == variables and self.command.possible == possible and self.command.values == values and self.command.description == self.descriptionEntry.get() and self.typeText.get() == self.command.type:
+        if self.command.name == self.nameEntry.get() and self.command.command == self.commandEntry.get() and self.command.variables == variables and self.command.possible == possible and self.command.values == values and self.command.description == self.descriptionEntry.get():
             return 'false'
 
         # If something has changed, return true
@@ -414,6 +490,9 @@ class CreateCommandApp(tk.Frame):
         if self.saved == 'false' or self.checkForChanges() == 'true':
             if messagebox.askyesno("Save Command?", "Would you like to save this command?"):
                 self.saveCommand()
+
+        # Run the callback command
+        self.callback()
 
         # Close the application
         self.quit()

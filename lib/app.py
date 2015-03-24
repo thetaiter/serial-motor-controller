@@ -1,14 +1,16 @@
 # Import built-in libraries
 import sys
+import os
 import glob
+import shutil
 from collections import namedtuple
 
 # Import local libraries
-from lib import create_command, show_info
+from lib import create_command, show_info, rename_type
 
 # Import 3rd party libraries
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 import serial
 
 # Confirm OS compatibility and path delimiter for specfic OS
@@ -30,7 +32,6 @@ NO_PORTS_MESSAGE =  'No Ports Detected'
 ENTER_COMMAND_MESSAGE = 'Enter a custom command here'
 INFO_PRESET_MESSAGE = 'Info will be printed here'
 AVAILABLE_BAUDS = ["9600", "19200", "38400"]
-COMMANDS = []
 
 # Custom structures for Command and Command Type
 CommandType = namedtuple("CommandType", ["name", "path", "commands"])
@@ -41,8 +42,12 @@ class MotorControlApp(tk.Frame):
     # Constructor initialization function
     def __init__(self, master):
         print("\nInitializing Tkinter frame...\n")
+
         # Initialize the TK frame
         tk.Frame.__init__(self, master)
+
+        self.setup = 'false'
+        self.program = ''
 
         # Load commands into the program
         self.loadCommands()
@@ -55,7 +60,7 @@ class MotorControlApp(tk.Frame):
 
         print("\nProgram loaded successfully.\n")
 
-    # Load the commands from files into the global COMMANDS array
+    # Load the commands from files into the global self.COMMANDS array
     def loadCommands(self):
         print("Loading commands...")
 
@@ -64,44 +69,69 @@ class MotorControlApp(tk.Frame):
 
         # Open _types.csv file and iterate through all lines
         count = 0
-        for line in open("commands%s_types.csv" % PATH_DELIMITER, 'r').readlines():
+        typesFile = open("commands%s_types.csv" % PATH_DELIMITER, 'r')
+        lines = typesFile.readlines()
+        typesFile.close()
+
+        for line in lines:
             # Split into tokens
             tokens = line.split(',')
 
-            # Append current command type to COMMANDS array
-            COMMANDS.append(CommandType(name=tokens[0], path=tokens[1].replace('->', PATH_DELIMITER).replace('\n', ''), commands=[]))
+            # Append current command type to self.COMMANDS array
+            if len(tokens) < 2:
+                path = ""
+            else:
+                path = tokens[1].replace('->', PATH_DELIMITER).replace('\n', '')
+            self.COMMANDS.append(CommandType(name=tokens[0], path=path, commands=[]))
+
+            print("\tLoading %s commands..." % self.COMMANDS[count].name)
 
             # Open current command type's commands path and iterate through all lines
-            file = open(COMMANDS[count].path, 'r')
-            for line in file.readlines():
-                # Split into 5 tokens separated by the first 5 commas
-                split = line.split(',', 5)
+            if os.path.isfile(self.COMMANDS[count].path):
+                file = open(self.COMMANDS[count].path, 'r')
+                for line in file.readlines():
+                    # Split into 5 tokens separated by the first 5 commas
+                    split = line.split(',', 5)
 
-                # If the first token starts with a parenthesis or bracket, re-split lines by first the 7 commas and
-                # combine the 1st and 2nd tokens and the 3rd and 4th tokens into one each, then shift the array of tokens accordingly
-                if split[0].startswith('[') or split[0].startswith('('):
-                    split = line.split(',', 7)
-                    split[0] = "%s, %s" % (split[0], split[1])
-                    split[1] = "%s, %s" % (split[2], split[3])
-                    split[2] = split[4]
-                    split[3] = split[5]
-                    split[4] = split[6]
-                    split[5] = split[7]
+                    # If the first token starts with a parenthesis or bracket, re-split lines by first the 7 commas and
+                    # combine the 1st and 2nd tokens and the 3rd and 4th tokens into one each, then shift the array of tokens accordingly
+                    if split[0].startswith('[') or split[0].startswith('('):
+                        split = line.split(',', 7)
+                        split[0] = "%s, %s" % (split[0], split[1])
+                        split[1] = "%s, %s" % (split[2], split[3])
+                        split[2] = split[4]
+                        split[3] = split[5]
+                        split[4] = split[6]
+                        split[5] = split[7]
 
-                # Append current command to the command type's commands array
-                COMMANDS[count].commands.append(Command(split[0], split[1], split[2], split[3], split[4], split[5]))
+                    # Append current command to the command type's commands array
+                    self.COMMANDS[count].commands.append(Command(split[0], split[1], split[2], split[3], split[4], split[5]))
 
-            # Close the file
-            file.close()
+                    print("\t\t%s command loaded successfully." % self.COMMANDS[count].commands[-1].name)
 
-            print("\t%s commands were loaded successfully." % COMMANDS[count].name)
+                # Close the file
+                file.close()
 
-            # Increment the line counter
-            count += 1
+                print("\t%s commands were loaded successfully." % self.COMMANDS[count].name)
+
+                # Increment the line counter
+                count += 1
+            else:
+                name = self.COMMANDS[count].name
+
+                del(self.COMMANDS[count])
+
+                file = open("commands%s_types.csv" % PATH_DELIMITER, 'w')
+                for l in lines:
+                    if not l.__contains__(name):
+                        file.write(l)
+
+        if self.setup == 'true':
+            self.selectedCommandType.set(self.commandTypeMenu['menu'].entrycget(0, 'label'))
 
     # Clear the global commands array
     def clearCommands(self):
-        COMMANDS = []
+        self.COMMANDS = []
         print("\tCommands cleared successfully.")
 
     # Calculate window position on screen
@@ -182,6 +212,8 @@ class MotorControlApp(tk.Frame):
         self.master.protocol("WM_DELETE_WINDOW", self.quitApp)
         print("\tX-button action set to quitApp successfully")
 
+        self.setup = 'true'
+
     # Send a command through the selected serial port
     def sendCommand(self, command=None):
         # If there is a valid port seleted send the command, else display select a port message
@@ -219,7 +251,7 @@ class MotorControlApp(tk.Frame):
         self.commandTypeMenu['menu'].delete(0, 'end')
 
         # For each command type, add an entry to the menu
-        for type in COMMANDS:
+        for type in self.COMMANDS:
             self.commandTypeMenu['menu'].add_command(label=type.name, command=lambda value=type.name:self.setTypeAndPopulateCommandsMenu(value))
             print("\t\t%s command type loaded successfully." % type.name)
 
@@ -274,12 +306,12 @@ class MotorControlApp(tk.Frame):
 
     # Get the command type object with the specified name
     def getCommandType(self, ctype):
-        # For each command type in COMMANDS check if name is equal to specified name
+        # For each command type in self.COMMANDS check if name is equal to specified name
         count = 0
-        for commandType in COMMANDS:
+        for commandType in self.COMMANDS:
             # If name = specified name, return the command type object
             if commandType.name == ctype:
-                return COMMANDS[count]
+                return self.COMMANDS[count]
 
             # Increment counter
             count += 1
@@ -288,13 +320,63 @@ class MotorControlApp(tk.Frame):
 
     # Edit the selected command
     def editCommand(self, command):
-        # TODO
         print("\tEdit button clicked for command ->", command)
+        if command is not None:
+            self.createCommandWindow = create_command.CreateCommandApp(tk.Tk(), self.COMMANDS, command, self.selectedCommandType.get(), lambda: self.populateCommandMenu())
+            self.createCommandWindow.run()
+        else:
+            self.info.set("Invalid command selected.")
 
     # Delete the specified command
     def deleteCommand(self, command):
-        # TODO
-        print("\tDelete button clicked for command ->", command)
+        # Display messagebox to alert user of deletion
+        if messagebox.askyesno('Delete Command?', "Are you sure you would like to delete the command '%s'?\nThis will be permanent." % command.name):
+            # Get indexes of type and command
+            typeIndex, comIndex = self.getCommandIndex(command)
+
+            # If command exists, delete it from the list of commands
+            if typeIndex != -1 and comIndex != -1:
+                del(self.COMMANDS[typeIndex].commands[comIndex])
+
+            # Read file where command originated from
+            file = open(self.getPath(self.selectedCommandType.get()), 'r')
+            lines = file.readlines()
+            file.close()
+
+            # Overwrite the file with all entries except desired command to delete
+            with open(self.getPath(self.selectedCommandType.get()), 'w') as file:
+                for line in lines:
+                    if not line.startswith(command.name):
+                        file.write(line)
+                file.close()
+
+            self.populateCommandMenu()
+
+            print("\tCommand '%s' was deleted successfully." % command.name)
+
+    # Get the index of the command's type in the global self.COMMANDS array and the index of the command within the commands array of that type
+    def getCommandIndex(self, command):
+        # For each type in self.COMMANDS, iterate through commands
+        typeCount = 0
+        for ctype in self.COMMANDS:
+            comCount = 0
+            for com in ctype.commands:
+                # If command name is same as desired command, return index of type and command
+                if com.name == command.name:
+                    return typeCount, comCount
+                # Incrememnt command counter
+                comCount += 1
+            #Incrememnt type counter
+            typeCount += 1
+
+        # If command was not found, return negative values
+        return -1, -1
+
+    # Get the file path of the commands that are of the specified type
+    def getPath(self, ctype):
+        for ct in self.COMMANDS:
+            if ct.name == ctype:
+                return ct.path
 
     # Quit the application
     def quitApp(self):
@@ -311,6 +393,9 @@ class MotorControlApp(tk.Frame):
             # If info window is opened, kill it
             if hasattr(self, 'createInfoWindow') and self.createInfoWindow.status == 'running':
                 self.createInfoWindow.quit()
+
+            if hasattr(self, 'renameTypeWindow') and self.renameTypeWindow.status == 'running':
+                self.renameTypeWindow.quit()
 
             # Destroy application
             self.master.destroy()
@@ -343,10 +428,10 @@ class MotorControlApp(tk.Frame):
     def createFileMenu(self):
         self.fileMenu = tk.Menu(self.menuBar, tearoff=0)
         self.fileMenu.add_command(label="New Command...", command= self.createCommand)
-        self.fileMenu.add_command(label="Load Commands...", command=self.loadCommandType)
         self.fileMenu.add_command(label="Load Program...", command=self.loadProgram)
-        self.fileMenu.add_command(label="Save Command As...", command=self.saveCommandAs)
-        self.fileMenu.add_command(label="Save Command Type As...", command=self.saveCommandTypeAs)
+        self.fileMenu.add_command(label="Load Command Type...", command=self.loadCommandType)
+        self.fileMenu.add_command(label="Save Command Type...", command=lambda:self.saveCommandType('false'))
+        self.fileMenu.add_command(label="Save Command Type As...", command=self.saveCommandType)
         self.fileMenu.add_separator()
         self.fileMenu.add_command(label="Exit", command=self.quitApp)
 
@@ -357,49 +442,198 @@ class MotorControlApp(tk.Frame):
 
     # Show the create command window
     def createCommand(self):
-        self.createCommandWindow = create_command.CreateCommandApp(tk.Tk(), COMMANDS)
+        self.createCommandWindow = create_command.CreateCommandApp(tk.Tk(), self.COMMANDS, None, "", lambda: self.populateCommandMenu())
         self.createCommandWindow.run()
 
     # Show the open command type dialog
     def loadCommandType(self):
-        # TODO
-        print("\tloadCommandType() called.")
+        # Prompt user for file to load
+        f = filedialog.askopenfile(mode='r', defaultextension='.csv')
+
+        # If file is not empty (aka it exists)
+        if f is not None:
+            # Extract name from path string
+            name = f.name.split('/')
+            name = name[len(name)-1].replace('.csv', '').replace('_', ' ').title()
+
+            print("\tLoading %s commands..." % name)
+
+            # Append new type to global self.COMMANDS array
+            self.COMMANDS.append(CommandType(name=name, path=f.name, commands=[]))
+
+            # For each line in the file, create a command entry
+            for line in f.readlines():
+                split = line.split(',', 5)
+                self.getCommandType(name).commands.append(Command(name=split[0], command=split[1], variables=split[2], possible=split[3], values=split[4], description=split[5]))
+                print("\t\t%s command loaded successfully." % self.getCommandType(name).commands[-1].name)
+
+            print("\t%s commands loaded successfully." % name)
 
     # Load a program from a file
     def loadProgram(self):
         # TODO
-        print("\tloadProgram() called.")
+        f = filedialog.askopenfile('r', defaultextension='.txt')
 
-    # Save the current command
-    def saveCommandAs(self):
-        # TODO
-        print("\tsaveCommandAs() called.")
+        self.program = f.readlines()
+
+        print(self.program)
+
+        f.close()
 
     # Show the save command type as dialog
-    def saveCommandTypeAs(self):
-        # TODO
-        print("\tsaveCommandTypeAs() called.")
+    def saveCommandType(self, As='true'):
+        if As == 'true':
+            # Prompt user for a file to save
+            f = filedialog.asksaveasfile(mode='w', defaultextension='.csv')
+        else:
+            # Use existing path
+            f = open(self.getCommandType(self.selectedCommandType.get()).path, 'w')
+
+        # If file is opened successfully
+        if f is not None:
+            print("\tSaving command type...")
+
+            # Write each command to the file
+            for command in self.getCommandsOfType(self.selectedCommandType.get()):
+                if not command.possible:
+                    possible = ''
+                else:
+                    possible = command.possible
+
+                f.write("%s,%s,%s,%s,%s,%s\n" % (" ".join(command.name.split()), " ".join(command.command.split()), command.variables, possible, command.values, command.description.replace('\n', '')))
+
+        print("\tCommand type saved successfully.")
 
     # Create the edit menu for menu bar
     def createEditMenu(self):
         self.editMenu = tk.Menu(self.frame, tearoff=0)
         self.editMenu.add_command(label="Edit Command...", command=lambda: self.editCommand(self.getCommand()))
+        self.editMenu.add_command(label="Rename Command Type...", command=self.renameCommandType)
+        self.editMenu.add_separator()
         self.editMenu.add_command(label="Delete Command", command=lambda: self.deleteCommand(self.getCommand()))
-        self.editMenu.add_command(label="Rename Command  Type...", command=self.renameCommandType)
         self.editMenu.add_command(label="Delete Command Type", command=self.deleteCommandType)
+        self.editMenu.add_command(label="Reload Default Commands", command=self.reloadDefaults)
 
         # Add edit menu to menu bar
         self.menuBar.add_cascade(label="Edit", menu=self.editMenu)
 
     # Rename the current command type
     def renameCommandType(self):
-        # TODO
-        print("\trenameCommandType() called.")
+        self.renameTypeWindow = rename_type.RenameTypeApp(tk.Tk(), self.getCommandType(self.selectedCommandType.get()), self.doRename)
+        self.renameTypeWindow.run()
+
+    # Rename the currently selected command type to the specified value
+    def doRename(self, newName):
+        # Get current command type and new paths
+        ctype = self.getCommandType(self.selectedCommandType.get())
+        newPath = ctype.path.replace(str.lower(ctype.name).replace(' ', '_').replace('/', '_'), str.lower(newName).replace(' ', '_').replace('/', '_'))
+
+        # Append new type to COMMANDS
+        self.COMMANDS.append(CommandType(name=newName, path=newPath, commands=ctype.commands))
+
+        # Delete current command type
+        self.deleteCommandType('false')
+
+        # Repopulate command menus
+        self.populateCommandTypeMenu()
+        self.selectedCommandType.set(newName)
+        self.populateCommandMenu()
+
+        # Save to new version of the type
+        self.saveCommandType('false')
+
+        # Append new type to _types.csv
+        file = open("commands%s_types.csv" % PATH_DELIMITER, 'a')
+        file.write("%s,%s\n" % (newName, newPath.replace(PATH_DELIMITER, '->')))
+        file.close()
 
     # Delete all commands in the current type and the type itself
-    def deleteCommandType(self):
-        # TODO
-        print("\tdeleteCommandType() called.")
+    def deleteCommandType(self, prompt='true'):
+        sure = 'false'
+
+        if prompt == 'true':
+            # Show messagebox alerting user they are about to delete a command type
+            if messagebox.askyesno("Delete Command Type?", "Are you sure you would like to completely erase the command type '%s'?\nThis will delete all commands of this type and will be permanent." % self.selectedCommandType.get()):
+                sure = 'true'
+        else:
+            sure = 'true'
+
+        if sure == 'true':
+            # Remove the file that containes this types commands
+            os.remove(self.getPath(self.selectedCommandType.get()))
+
+            # Read the _types.csv file
+            file = open("commands%s_types.csv" % PATH_DELIMITER, 'r')
+            lines = file.readlines()
+            file.close()
+
+            # Remove type from _types.csv
+            file = open("commands%s_types.csv" % PATH_DELIMITER, 'w')
+            for line in lines:
+                if not line.startswith(self.selectedCommandType.get()):
+                    file.write(line)
+            file.close()
+
+            # Get type index and delete type from self.COMMANDS array
+            typeIndex, dummy = self.getCommandIndex(self.getCommand())
+            del self.COMMANDS[typeIndex]
+
+            # Repopulate menus
+            self.populateCommandTypeMenu()
+            self.selectedCommandType.set(self.commandTypeMenu['menu'].entrycget(0, 'label'))
+            self.populateCommandMenu()
+
+            print("\tCommand type '%s' has been removed successfully.")
+
+    # Reload the default commands
+    def reloadDefaults(self):
+        # Set text to prompt user with
+        text = "Are you sure you would like to reload the default commands? This will overwrite any changes you have made to the following default types, and cannot be undone:\n\nOperation Stored, Status Request, Input/Output, Looping/Branching, Motor, Pausing, Set"
+
+        # Display messagebox to ask user if they are sure they want to load defaults
+        if messagebox.askyesno("Reload Defaults?", text):
+            print("\tReloading default commands...")
+
+            # Remove existing version of default command types
+            print("\t\tRemoving existing command type files...")
+            if os.path.isdir("commands%simmediate" % PATH_DELIMITER) and os.path.exists("commands%simmediate" % PATH_DELIMITER):
+                shutil.rmtree("commands%simmediate" % PATH_DELIMITER)
+            if os.path.isdir("commands%sprogram_stored" % PATH_DELIMITER) and os.path.exists("commands%sprogram_stored" % PATH_DELIMITER):
+                shutil.rmtree("commands%sprogram_stored" % PATH_DELIMITER)
+            if os.path.isfile("commands%sset.csv" % PATH_DELIMITER):
+                os.remove("commands%sset.csv" % PATH_DELIMITER)
+
+            # Copy default files to commands directory
+            print("\t\tCopying default files...")
+            shutil.copytree("commands%s_defaults%simmediate" % (PATH_DELIMITER, PATH_DELIMITER), "commands%simmediate" % PATH_DELIMITER)
+            shutil.copytree("commands%s_defaults%sprogram_stored" % (PATH_DELIMITER, PATH_DELIMITER), "commands%sprogram_stored" % PATH_DELIMITER)
+            shutil.copyfile("commands%s_defaults%sset.csv" % (PATH_DELIMITER, PATH_DELIMITER), "commands%sset.csv" % PATH_DELIMITER)
+
+            # If there is not a custom file, copy the one from defaults
+            if not os.path.isfile("commands%scustom.csv" % PATH_DELIMITER):
+                shutil.copyfile("commands%s_defaults%scustom.csv" % (PATH_DELIMITER, PATH_DELIMITER), "commands%scustom.csv" % PATH_DELIMITER)
+
+            # Open the current and default types files and compare them
+            file = open("commands%s_defaults%s_types.csv" % (PATH_DELIMITER, PATH_DELIMITER), 'r')
+            defTypes = file.readlines()
+            file.close()
+
+            file = open("commands%s_types.csv" % PATH_DELIMITER, 'r')
+            types = file.readlines()
+            file.close()
+
+            # For each type in the default that is not in the current types file, add it to the current types file
+            for ctype in defTypes:
+                if not ctype in types:
+                    file = open("commands%s_types.csv" % PATH_DELIMITER, 'a')
+                    file.write(ctype)
+                    file.close()
+
+            # Clear current commands and reload from _types.csv
+            self.loadCommands()
+            self.populateCommandTypeMenu()
+            self.selectedCommandType.set(self.commandTypeMenu['menu'].entrycget(0, 'label'))
+            self.populateCommandMenu()
 
     # Create the serial menu
     def createSerialMenu(self):
@@ -527,8 +761,8 @@ class MotorControlApp(tk.Frame):
         self.immediateMenu.delete(0, 'end')
         self.programStoredMenu.delete(0, 'end')
 
-        # For each command type object in COMMANDS, check the name and place it in the appropriate menu
-        for ctype in COMMANDS:
+        # For each command type object in self.COMMANDS, check the name and place it in the appropriate menu
+        for ctype in self.COMMANDS:
             # For first two types, place is immediate menu
             if ctype.name == "Operation Stored" or ctype.name == "Status Request":
                 tempMenu = self.immediateMenu

@@ -1,0 +1,31 @@
+U0,U0,,,,Wait for a "low" on user input 1.
+U1,U1,,,,Wait for a low on user input 1, holding user input 1 high while waiting.
+U2,U2,,,,Enable Jog mode while waiting for input.
+U3,U3,,,,Disable jog mode while waiting for input.
+U4,U4,,,,User output 1 "low" (reset state).
+U5,U5,,,,User output 1 high.
+U6,U6,,,,Send "WE" to host and wait for a "G" to continue.
+U7,U7,,,,Start the Continuous Index with pulse on output 2.
+U77,U77,,,,Start the Continuous Index with no output.
+U8,U8,,,,Start the Continuous Index sending "@" to the host.
+U9,U9,,,,End of Continuous Index with auto-decel to stop.
+U91,U91,,,,End of Continuous Index with auto-generate a deceleration Index as next command.
+U92,U92,,,,End of Continuous Index using next Index for deceleration to stop.
+U99,U99,,,,End of Continuous Index with instantaneous stop.
+U11,U11,,,,Skip next command if input 1 is high.
+U12,U12,,,,Skip next command if input 2 is high.
+U13,U13,,,,Wait for front panel button to jump to a program or continue: "Motor 1 jog -" button to jump to program no. 1, "Motor 1 jog+" button to jump to program no. 2, "Run" button to proceed in current program.
+U14,U14,,,,User output 2 low (reset state).
+U15,U15,,,,User output 2 high.
+U16,U16,,,,Optional User output 3 low (reset state).
+U17,U17,,,,Optional User output 3 high.
+U18,U18,,,,Optional User output 4 low (reset state).
+U19,U19,,,,Optional User output 4 high.
+U23,U23,,,,Wait for front panel button to jump to a program and come back or continue: "Motor 1 jog -" button to jump to program no. 1, "Motor 1 jog+" button to jump to program no. 2, "Run" button to proceed in current program.
+U30,U30,,,,Wait for a low to high transition on user input 1.
+U31,U31,,,,Wait for a low to high transition on user input 1, holding user output 1 high while waiting.
+U32,U32,,,,Wait for "Motor 1 Jog -" button to be pressed on front panel with debouncing.
+U33,U33,,,,Wait for "Motor 1 Jog +" button to be pressed on front panel with debouncing.
+U50,U50,,,,Wait for a low and high on user input 1 with debouncing for a mechanical push-button switch.
+U51,U51,,,,Wait for a low and high on user input 1 with debouncing for a mechanical push-button switch, holding user output 1 high while waiting.
+U90,U90,,,,Wait for a low to high on the Run button or connection I/O, 4 with debouncing for a mechanical pus-button switch.

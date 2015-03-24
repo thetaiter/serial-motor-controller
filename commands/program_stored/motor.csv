@@ -1,6 +1,6 @@
 lmMx,lmMx,mx,[1-4 1-16777215],1 500,Set steps to incremental Index motor CW (positive) m = motor no. (1, 2, 3, 4), x = 1 to 16,777,215.
 lmM-x,lmM-x,mx,[1-4 1-16777215],1 500,Set steps to incremental Index motor CCW (negative) m = motor no. (1, 2, 3, 4), x = 1 to 16,777,215.
-lAmMx,lAmMx,mx,[1-4 +-1-16777215],1 500,Set Absolute Index distance, m = motor no. (1, 2, 3, 4), x = (+ or -)1 to (+ or -)16,777,215.
+lAmMx,lAmMx,mx,[1-4 -16777215-16777215],1 500,Set Absolute Index distance, m = motor no. (1, 2, 3, 4), x = (+ or -)1 to (+ or -)16,777,215.
 IAmM0,IAmM0,m,[1-4],1,Index motor to Absolute zero position, m = motor no. (1, 2, 3, 4).
 IAmM-0,IAmM-0,m,[1-4],1,Zero motor position for motor no. m, m = 1, 2, 3, 4.
 ImM0,ImM0,m,[1-4],1,Index motor until positive limit is encountered, m = motor no. (1, 2, 3, 4).
