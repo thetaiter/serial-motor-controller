@@ -78,7 +78,11 @@ class MotorControlApp(tk.Frame):
             tokens = line.split(',')
 
             # Append current command type to self.COMMANDS array
-            self.COMMANDS.append(CommandType(name=tokens[0], path=tokens[1].replace('->', PATH_DELIMITER).replace('\n', ''), commands=[]))
+            if len(tokens) < 2:
+                path = ""
+            else:
+                path = tokens[1].replace('->', PATH_DELIMITER).replace('\n', '')
+            self.COMMANDS.append(CommandType(name=tokens[0], path=path, commands=[]))
 
             print("\tLoading %s commands..." % self.COMMANDS[count].name)
 
