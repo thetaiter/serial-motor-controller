@@ -1,4 +1,4 @@
-Px,Px,x,[0-65535],10,Pause x tenths of a second, (x = 0 to 65,535).
-P-x,P-x,x,[0-65535],10,Pause x tenths of a millisecond, (x = 1 to 65,535).
-PAx,PAx,x,[0-65535],10,Pause x tenths of a second (x = 0 to 65,535, 10  microsecond pause when x = 0) Alternating output 1 high for duration of the pause.
-PA-x,PA-x,x,[0-65535],10,Pause x tenths of a millisecond (x = 0 to 65,535, 10 microsecond pause when x = 0) Alternating output 1 high for duration of the pause.
+Px,Px,x,0-65535,10,Pause x tenths of a second, (x = 0 to 65,535).
+P-x,P-x,x,0-65535,10,Pause x tenths of a millisecond, (x = 1 to 65,535).
+PAx,PAx,x,0-65535,10,Pause x tenths of a second (x = 0 to 65,535, 10  microsecond pause when x = 0) Alternating output 1 high for duration of the pause.
+PA-x,PA-x,x,0-65535,10,Pause x tenths of a millisecond (x = 0 to 65,535, 10 microsecond pause when x = 0) Alternating output 1 high for duration of the pause.

@@ -1,6 +1,10 @@
 # Import built-in libraries
 from collections import namedtuple
 
+# Import local libraries
+from lib import command
+Command = command.Command
+
 # Import 3rd party libraries
 import tkinter as tk
 
@@ -8,9 +12,6 @@ import tkinter as tk
 WINDOW_SIZE = [525, 600]
 MAX_CHARS_IN_LINE = 50
 TITLE = "Show Info"
-
-# Custom command structure
-Command = namedtuple("Command", "name command variables values description")
 
 # Show info application main class
 class ShowInfoApp(tk.Frame):
@@ -85,7 +86,17 @@ class ShowInfoApp(tk.Frame):
 
         # For each command, append the formatted information to return object
         for command in commands:
-            ret.append("Name: %s\nCommand: %s\nVariables: %s\nCurrent Values: %s\nDescription: %s\n" % (command.name, command.command, ', '.join(command.variables), ', '.join(command.values.split()), command.description))
+            variables = []
+            possibles = []
+            currents = []
+
+            if command.getVariables():
+                for v in command.getVariables():
+                    variables.append(v.getSymbol())
+                    possibles.append(str(v.getLow()) + " - " + str(v.getHigh()))
+                    currents.append(str(v.getCurrentValue()))
+
+            ret.append("Name: %s\nCommand: %s\nVariables: %s\nPossible Values: %s\nCurrent Values: %s\nDescription: %s\n" % (command.getName(), command.getCurrentCommand(), ', '.join(variables), ', '.join(possibles), ', '.join(currents), command.getDescription()))
 
         # Return formatted commands
         return ret
