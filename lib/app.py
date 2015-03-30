@@ -3,7 +3,6 @@ import sys
 import os
 import glob
 import shutil
-from collections import namedtuple
 
 # Import local libraries
 from lib import create_command, show_info, rename_type, command_type, command, variable
@@ -19,18 +18,6 @@ Variable = variable.Variable
 import tkinter as tk
 from tkinter import messagebox, filedialog
 import serial
-
-# Confirm OS compatibility and path delimiter for specfic OS
-OS = sys.platform
-PATH_DELIMITER = ""
-
-if OS.startswith('win') or OS.startswith('cygwin'):
-    PATH_DELIMITER = "\\"
-elif OS.startswith('linux') or OS.startswith('darwin'):
-    PATH_DELIMITER = "/"
-else:
-    messagebox.showerror("System not supported", "Your system, %s, is not supported." % OS)
-    exit(-1)
 
 # Set Global Variables
 WINDOW_SIZE = [400, 300]
@@ -72,7 +59,7 @@ class MotorControlApp(tk.Frame):
 
         # Open _types.csv file and iterate through all lines
         count = 0
-        typesFile = open("commands%s_types.csv" % PATH_DELIMITER, 'r')
+        typesFile = open("commands%s_types.csv" % os.sep, 'r')
         lines = typesFile.readlines()
         typesFile.close()
 
@@ -84,7 +71,7 @@ class MotorControlApp(tk.Frame):
             if len(tokens) < 2:
                 path = ""
             else:
-                path = tokens[1].replace('->', PATH_DELIMITER).replace('\n', '')
+                path = tokens[1].replace('->', os.sep).replace('\n', '')
             self.COMMANDS.append(CommandType(name=tokens[0], path=path, commands=[]))
 
             print("\tLoading %s commands..." % self.COMMANDS[count].name)
@@ -99,8 +86,8 @@ class MotorControlApp(tk.Frame):
                     # combine the 1st and 2nd tokens and the 3rd and 4th tokens into one each, then shift the array of tokens accordingly
                     if split[0].startswith('[') or split[0].startswith('('):
                         split = line.split(',', 7)
-                        split[0] = "%s, %s" % (split[0], split[1])
-                        split[1] = "%s, %s" % (split[2], split[3])
+                        split[0] = "%s, %s" % (split[0], split[1].replace(' ', '', 1))
+                        split[1] = "%s, %s" % (split[2], split[3].replace(' ', '', 1))
                         split[2] = split[4]
                         split[3] = split[5]
                         split[4] = split[6]
@@ -126,7 +113,7 @@ class MotorControlApp(tk.Frame):
                             c += 1
 
                     # Append current command to the command type's commands array
-                    self.COMMANDS[count].getCommands().append(Command(name=split[0], command=split[1], variables=vars, description=split[5], frame=tk.Frame()))
+                    self.COMMANDS[count].getCommands().append(Command(name=split[0], command=split[1], variables=vars, description=split[5].replace('\n', ''), frame=tk.Frame()))
 
                     print("\t\t%s command loaded successfully." % self.COMMANDS[count].getCommands()[-1].getName())
 
@@ -142,7 +129,7 @@ class MotorControlApp(tk.Frame):
 
                 del(self.COMMANDS[count])
 
-                file = open("commands%s_types.csv" % PATH_DELIMITER, 'w')
+                file = open("commands%s_types.csv" % os.sep, 'w')
                 for l in lines:
                     if not l.__contains__(name):
                         file.write(l)
@@ -278,7 +265,7 @@ class MotorControlApp(tk.Frame):
 
         # If there is not a selected command type, set selected command type to first in the menu
         if not self.selectedCommandType.get():
-            self.selectedCommandType.set("Operation Stored")
+            self.selectedCommandType.set(self.commandTypeMenu['menu'].entrycget(0, 'label'))
 
     # Set selected command type and populate the command menu accordingly
     def setTypeAndPopulateCommandsMenu(self, ctype):
@@ -487,6 +474,17 @@ class MotorControlApp(tk.Frame):
             for line in f.readlines():
                 split = line.split(',', 5)
 
+                # If the first token starts with a parenthesis or bracket, re-split lines by first the 7 commas and
+                # combine the 1st and 2nd tokens and the 3rd and 4th tokens into one each, then shift the array of tokens accordingly
+                if split[0].startswith('[') or split[0].startswith('('):
+                    split = line.split(',', 7)
+                    split[0] = "%s, %s" % (split[0], split[1].replace(' ', '', 1))
+                    split[1] = "%s, %s" % (split[2], split[3].replace(' ', '', 1))
+                    split[2] = split[4]
+                    split[3] = split[5]
+                    split[4] = split[6]
+                    split[5] = split[7]
+
                 variables = []
                 if split[2]:
                     c = 0
@@ -500,6 +498,7 @@ class MotorControlApp(tk.Frame):
                             low = -1000000
                             high = 1000000
                         else:
+                            low = int(low)
                             high = int(split[3].split()[c].split('-')[1])
 
                         variables.append(Variable(symbol=v, low=low, high=high, currentValue=int(split[4].split()[c])))
@@ -532,7 +531,7 @@ class MotorControlApp(tk.Frame):
             f = open(self.getCommandType(self.selectedCommandType.get()).getPath(), 'w')
 
         # If file is opened successfully
-        if f is not None:
+        if f:
             print("\tSaving command type '%s'..." % self.selectedCommandType.get())
 
             # Write each command to the file
@@ -547,10 +546,10 @@ class MotorControlApp(tk.Frame):
                         possibles.append(str(v.getLow()) + "-" + str(v.getHigh()))
                         values.append(str(v.getCurrentValue()))
 
-                f.write("%s,%s,%s,%s,%s,%s\n" % (command.getName(), command.getCommand(), "".join(variables), " ".join(possibles), " ".join(values), command.getDescription()))
+                f.write("%s,%s,%s,%s,%s,%s\n" % (command.getName(), command.getCommand(), "".join(variables), " ".join(possibles), " ".join(values), command.getDescription().replace('\n', '')))
                 print("\t\t%s saved successfully." % command.getName())
 
-        print("\tCommand type '%s' saved successfully." % self.selectedCommandType.get())
+            print("\tCommand type '%s' saved as '%s' successfully." % (self.selectedCommandType.get(), f.name))
 
     # Create the edit menu for menu bar
     def createEditMenu(self):
@@ -591,8 +590,8 @@ class MotorControlApp(tk.Frame):
         self.saveCommandType(As=False)
 
         # Append new type to _types.csv
-        file = open("commands%s_types.csv" % PATH_DELIMITER, 'a')
-        file.write("%s,%s\n" % (newName, newPath.replace(PATH_DELIMITER, '->')))
+        file = open("commands%s_types.csv" % os.sep, 'a')
+        file.write("%s,%s\n" % (newName, newPath.replace(os.sep, '->')))
         file.close()
 
     # Delete all commands in the current type and the type itself
@@ -612,12 +611,12 @@ class MotorControlApp(tk.Frame):
             os.remove(self.getPath(ctype))
 
             # Read the _types.csv file
-            file = open("commands%s_types.csv" % PATH_DELIMITER, 'r')
+            file = open("commands%s_types.csv" % os.sep, 'r')
             lines = file.readlines()
             file.close()
 
             # Remove type from _types.csv
-            file = open("commands%s_types.csv" % PATH_DELIMITER, 'w')
+            file = open("commands%s_types.csv" % os.sep, 'w')
             for line in lines:
                 if not line.startswith(ctype):
                     file.write(line)
@@ -645,36 +644,36 @@ class MotorControlApp(tk.Frame):
 
             # Remove existing version of default command types
             print("\t\tRemoving existing command type files...")
-            if os.path.isdir("commands%simmediate" % PATH_DELIMITER) and os.path.exists("commands%simmediate" % PATH_DELIMITER):
-                shutil.rmtree("commands%simmediate" % PATH_DELIMITER)
-            if os.path.isdir("commands%sprogram_stored" % PATH_DELIMITER) and os.path.exists("commands%sprogram_stored" % PATH_DELIMITER):
-                shutil.rmtree("commands%sprogram_stored" % PATH_DELIMITER)
-            if os.path.isfile("commands%sset.csv" % PATH_DELIMITER):
-                os.remove("commands%sset.csv" % PATH_DELIMITER)
+            if os.path.isdir("commands%simmediate" % os.sep) and os.path.exists("commands%simmediate" % os.sep):
+                shutil.rmtree("commands%simmediate" % os.sep)
+            if os.path.isdir("commands%sprogram_stored" % os.sep) and os.path.exists("commands%sprogram_stored" % os.sep):
+                shutil.rmtree("commands%sprogram_stored" % os.sep)
+            if os.path.isfile("commands%sset.csv" % os.sep):
+                os.remove("commands%sset.csv" % os.sep)
 
             # Copy default files to commands directory
             print("\t\tCopying default files...")
-            shutil.copytree("commands%s_defaults%simmediate" % (PATH_DELIMITER, PATH_DELIMITER), "commands%simmediate" % PATH_DELIMITER)
-            shutil.copytree("commands%s_defaults%sprogram_stored" % (PATH_DELIMITER, PATH_DELIMITER), "commands%sprogram_stored" % PATH_DELIMITER)
-            shutil.copyfile("commands%s_defaults%sset.csv" % (PATH_DELIMITER, PATH_DELIMITER), "commands%sset.csv" % PATH_DELIMITER)
+            shutil.copytree("commands%s_defaults%simmediate" % (os.sep, os.sep), "commands%simmediate" % os.sep)
+            shutil.copytree("commands%s_defaults%sprogram_stored" % (os.sep, os.sep), "commands%sprogram_stored" % os.sep)
+            shutil.copyfile("commands%s_defaults%sset.csv" % (os.sep, os.sep), "commands%sset.csv" % os.sep)
 
             # If there is not a custom file, copy the one from defaults
-            if not os.path.isfile("commands%scustom.csv" % PATH_DELIMITER):
-                shutil.copyfile("commands%s_defaults%scustom.csv" % (PATH_DELIMITER, PATH_DELIMITER), "commands%scustom.csv" % PATH_DELIMITER)
+            if not os.path.isfile("commands%scustom.csv" % os.sep):
+                shutil.copyfile("commands%s_defaults%scustom.csv" % (os.sep, os.sep), "commands%scustom.csv" % os.sep)
 
             # Open the current and default types files and compare them
-            file = open("commands%s_defaults%s_types.csv" % (PATH_DELIMITER, PATH_DELIMITER), 'r')
+            file = open("commands%s_defaults%s_types.csv" % (os.sep, os.sep), 'r')
             defTypes = file.readlines()
             file.close()
 
-            file = open("commands%s_types.csv" % PATH_DELIMITER, 'r')
+            file = open("commands%s_types.csv" % os.sep, 'r')
             types = file.readlines()
             file.close()
 
             # For each type in the default that is not in the current types file, add it to the current types file
             for ctype in defTypes:
                 if not ctype in types:
-                    file = open("commands%s_types.csv" % PATH_DELIMITER, 'a')
+                    file = open("commands%s_types.csv" % os.sep, 'a')
                     file.write(ctype)
                     file.close()
 

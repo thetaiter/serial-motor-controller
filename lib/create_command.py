@@ -1,6 +1,6 @@
 # Import built-in libraries
 from collections import namedtuple
-import sys
+import os
 import re
 
 # Import local libraries
@@ -13,22 +13,14 @@ Variable = variable.Variable
 import tkinter as tk
 from tkinter import messagebox
 
-# Set path delimiter
-PATH_DELIMITER = ""
-
-if sys.platform.startswith('win'):
-    PATH_DELIMITER = "\\"
-else:
-    PATH_DELIMITER = "/"
-
 # Set Global Variables
 WINDOW_SIZE = [300, 245]
 TITLE = "Create Command"
 HELP = {
-    "Name": "This is the name of your new command. It will be added to the list of custom commands.",
+    "Name": "This is the name of your new command. It will be added to the command type selected below.",
     "Command": "This is the command entry for your new command. If any characters in the command are meant to take adjustable values, place those characters in a string in the variables entry. For example, if your command is \"move_motorM_x\" and you want \"M\" to represent which motor to move, and \"x\" to represent the number of steps to move, place \"Mx\" or \"xM\" in the variables entry.",
     "Variables": "This is the entry for all the variables that you intend to adjust. Do not put spaces or any other characters between them. Leave blank if you do not wish to use variables in this command.",
-    "Possible": "This is the entry for all possible values that your variables can take. For each variable repespectively, you must have a set of possible values. The possible values for each of your variables will need to be space delimited, and must be a range delimited by '-'.  For example: if you have two variables 'xM' and x can take values 1 to 100, and M can take values 0 to 4, you would type '1-100 0-4' in the possible values entry box.",
+    "Possible": "This is the entry for all possible values that your variables can take. For each variable, you must have a set of possible values. The possible values for each of your variables will need to be space delimited, and must be a range with a low and high value delimited by '-'.  For example: if you have two variables 'xM' and x can take values 1 to 100, and M can take values 0 to 4, you would type '1-100 0-4' in this entry box.",
     "Values": "This is the entry for a space delimited list of inital values for the variables you entered. They will be assigned in the order you entered the variables in the variables entry. Leave blank if you did not enter any variables.",
     "Description": "This is the entry for a description of what the command does.",
     "Type": "This is the type of command you want to create. Your command will be organized in menus and things based on it's type. The default new command type is 'Custom'.",
@@ -160,10 +152,10 @@ class CreateCommandApp(tk.Frame):
                     currents.append(str(v.getCurrentValue()))
 
             self.nameEntry.insert(0, self.command.getName())
-            self.commandEntry.insert(0, self.command.getCurrentCommand())
+            self.commandEntry.insert(0, self.command.getCommand())
             self.variablesEntry.insert(0, "".join(vars))
-            self.possibleEntry.insert(0, ", ".join(possibles))
-            self.valuesEntry.insert(0, ", ".join(currents))
+            self.possibleEntry.insert(0, " ".join(possibles))
+            self.valuesEntry.insert(0, " ".join(currents))
             self.descriptionEntry.insert(0, self.command.getDescription())
             self.selectedType.set(self.type)
 
@@ -226,9 +218,13 @@ class CreateCommandApp(tk.Frame):
 
     # Check for changes and save if there are any
     def checkAndSave(self):
-        if self.checkForChanges() == True:
-            self.saved = False
+        self.checkForChanges()
+
+        if self.saved == False:
             self.saveCommand()
+            self.quitApp()
+        else:
+            self.quitApp()
 
     # Save the current comand entry
     def saveCommand(self):
@@ -254,11 +250,11 @@ class CreateCommandApp(tk.Frame):
             # If there is text in the type name entry, create a new entry in the _types.csv file and add to commands array, else just update existing command type entry
             if self.typeText.get():
                 # Set the path for the new type
-                path = "commands%s%s.csv" % (PATH_DELIMITER, str.lower(self.typeText.get().replace(" ", "_")))
+                path = "commands%s%s.csv" % (os.sep, str.lower(self.typeText.get().replace(" ", "_")))
 
                 # Update _types.csv
-                with open("commands%s_types.csv" % PATH_DELIMITER, 'a') as file:
-                    file.write("%s,%s\n" % (self.typeText.get(), path.replace(PATH_DELIMITER, '->')))
+                with open("commands%s_types.csv" % os.sep, 'a') as file:
+                    file.write("%s,%s\n" % (self.typeText.get(), path.replace(os.sep, '->')))
                     file.close()
 
                 # Append type to commands
@@ -275,9 +271,6 @@ class CreateCommandApp(tk.Frame):
 
             # Set saved to true
             self.saved = True
-
-            # Close the create command window
-            self.quitApp()
         else:
             # Resume focus on create command window
             self.master.focus_force()
@@ -478,11 +471,13 @@ class CreateCommandApp(tk.Frame):
 
     # Check if changes have been made since last save attempt
     def checkForChanges(self):
-        # If nothing has changed, return false
+        # If something has changes, return true
         if self.command.getName() != self.nameEntry.get():
+            self.saved = False
             return True
 
         if self.command.getCommand() != self.commandEntry.get():
+            self.saved = False
             return True
 
         variables = []
@@ -494,18 +489,23 @@ class CreateCommandApp(tk.Frame):
             values.append(str(v.getCurrentValue()))
 
         if "".join(variables) != self.variablesEntry.get():
+            self.saved = False
             return True
 
-        if ", ".join(possibles) != self.possibleEntry.get():
+        if " ".join(possibles) != self.possibleEntry.get():
+            self.saved = False
             return True
 
-        if ", ".join(values) != self.valuesEntry.get():
+        if " ".join(values) != self.valuesEntry.get():
+            self.saved = False
             return True
 
         if self.command.getDescription() != self.descriptionEntry.get():
+            self.saved = False
             return True
 
-        # If something has changed, return true
+        # If nothing has changed, return false
+        self.saved = True
         return False
 
     # Run the application
@@ -523,8 +523,10 @@ class CreateCommandApp(tk.Frame):
 
     # Quit the application
     def quitApp(self):
-        # If the user would like to save teh command, command is saved, else command is not saved
-        if self.saved == False or self.checkForChanges() == True:
+        # If the user would like to save teh command, command is saved, else command is not
+        self.checkForChanges()
+
+        if self.saved == False:
             if messagebox.askyesno("Save Command?", "Would you like to save this command?"):
                 self.saveCommand()
 

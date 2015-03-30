@@ -1,6 +1,3 @@
-# Import built-in libraries
-from collections import namedtuple
-
 # Import local libraries
 from lib import command
 Command = command.Command
@@ -96,7 +93,7 @@ class ShowInfoApp(tk.Frame):
                     possibles.append(str(v.getLow()) + " - " + str(v.getHigh()))
                     currents.append(str(v.getCurrentValue()))
 
-            ret.append("Name: %s\nCommand: %s\nVariables: %s\nPossible Values: %s\nCurrent Values: %s\nDescription: %s\n" % (command.getName(), command.getCurrentCommand(), ', '.join(variables), ', '.join(possibles), ', '.join(currents), command.getDescription()))
+            ret.append("Name: %s\nCommand: %s\nVariables: %s\nPossible Values: %s\nCurrent Values: %s\nDescription: %s\n" % (command.getName(), command.getCommand(), ', '.join(variables), ', '.join(possibles), ', '.join(currents), command.getDescription()))
 
         # Return formatted commands
         return ret
