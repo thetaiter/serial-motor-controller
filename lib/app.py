@@ -26,18 +26,27 @@ NO_PORTS_MESSAGE =  'No Ports Detected'
 ENTER_COMMAND_MESSAGE = 'Enter a custom command here'
 INFO_PRESET_MESSAGE = 'Info will be printed here'
 AVAILABLE_BAUDS = ["9600", "19200", "38400"]
+FRAME_POSITION = [0, 103]
+FRAME_SIZE = [WINDOW_SIZE[0]-117, WINDOW_SIZE[1]-64]
 
 # Main app class with all major app functions
 class MotorControlApp(tk.Frame):
     # Constructor initialization function
     def __init__(self, master):
-        print("\nInitializing Tkinter frame...\n")
+        print("\nInitializing Tkinter frame...")
 
         # Initialize the TK frame
         tk.Frame.__init__(self, master)
 
         self.setup = False
         self.program = ''
+
+        # Create master frame
+        self.frame = tk.Frame(self.master)
+        self.frame.place(x=0, y=0, width=WINDOW_SIZE[0], height=WINDOW_SIZE[1])
+        print("\tFrame created successfully.")
+
+        self.selectedFrame = tk.Frame(self.frame)
 
         # Load commands into the program
         self.loadCommands()
@@ -125,7 +134,7 @@ class MotorControlApp(tk.Frame):
                             c += 1
 
                     # Append current command to the command type's commands array
-                    self.COMMANDS[count].getCommands().append(Command(name=split[0], command=split[1], variables=vars, description=split[5].replace('\n', ''), frame=tk.Frame()))
+                    self.COMMANDS[count].getCommands().append(Command(name=split[0], command=split[1], variables=vars, description=split[5].replace('\n', ''), frame=tk.Frame(self.frame)))
 
                     print("\t\t%s command loaded successfully." % self.COMMANDS[count].getCommands()[-1].getName())
 
@@ -164,6 +173,42 @@ class MotorControlApp(tk.Frame):
 
         return x, y
 
+    # Setup specified command frame
+    def createCommandFrame(self, command):
+        # Set initial position and master variables entry
+        yPosition = 30
+        self.variables = {}
+
+        # Create and place variables label
+        variablesLabel = tk.Label(command.getFrame(), text="Variables", relief=tk.GROOVE)
+        variablesLabel.place(x=2, y=2, width=280)
+
+        # Iterate through variables
+        for variable in command.variables:
+            # Make a label for the variable
+            label = tk.Label(command.getFrame(), text=variable.getSymbol() + ':')
+            label.place(x=5, y=yPosition, width=25)
+
+            # Create a string var for the variable and store in varibales object
+            self.variables[variable.getSymbol()] = tk.StringVar(command.getFrame())
+
+            # Create and place an entry for the value of the variable
+            entry = tk.Entry(command.getFrame(), textvariable=self.variables[variable.getSymbol()])
+            entry.place(x=30, y=yPosition, width=50)
+
+            # Set variable value to current value
+            self.variables[variable.getSymbol()].set(command.getVariable(variable.getSymbol()).getCurrentValue())
+
+            # Get low nad high values
+            low, high = variable.getLowAndHigh()
+
+            # Create label for possible values
+            possibleLabel = tk.Label(command.getFrame(), text="Possible: %s - %s" % (low, high), anchor='w')
+            possibleLabel.place(x=85, y=yPosition, width=200)
+
+            # Increment the y position
+            yPosition += 30
+
     # Set up the tkinter window
     def setupWindow(self, width, height, xoffset, yoffset):
         print("Settings up window w=%s, h=%s, xoffset=%s, yoffset=%s..."% (width, height, xoffset, yoffset))
@@ -172,11 +217,6 @@ class MotorControlApp(tk.Frame):
         self.master.geometry("%dx%d%+d%+d" % (width, height, xoffset, yoffset))
         self.master.resizable(width=False, height=False)
         self.master.title(TITLE)
-
-        # Create master frame
-        self.frame = tk.Frame(self.master)
-        self.frame.place(x=0, y=0, width=width, height=height)
-        print("\tframe created successfully.")
 
         # Create the Command entry box
         self.currentCommand = tk.StringVar()
@@ -292,12 +332,13 @@ class MotorControlApp(tk.Frame):
         self.commandMenu["menu"].delete(0, "end")
 
         # For each command, add an entry to the menu
-        for command in self.getCommandsOfType(self.selectedCommandType.get(), namesOnly=True):
-            self.commandMenu["menu"].add_command(label=command, command=lambda value=command: self.selectedCommand.set(value))
-            print("\t\t%s command loaded successfully." % command)
+        for command in self.getCommandsOfType(self.selectedCommandType.get()):
+            self.commandMenu["menu"].add_command(label=command.getName(), command=lambda value=command: self.commandClicked(value))
+            print("\t\t%s command loaded successfully." % command.getName())
 
         # Set selected command to first in the menu
         self.selectedCommand.set(self.commandMenu["menu"].entrycget(0, "label"))
+        self.commandClicked(self.getCurrentCommand())
 
     # Get the currently selected command
     def getCurrentCommand(self):
@@ -337,6 +378,23 @@ class MotorControlApp(tk.Frame):
             count += 1
 
         print("\tgetCommandType(%s) returned nothing." % ctype)
+
+    # Callback to run when a command is selected
+    def commandClicked(self, command):
+        # Set selected command
+        self.selectedCommand.set(command.getName())
+
+        # Remove previous command frame
+        self.selectedFrame.place_forget()
+
+        # Create the frame for selected command
+        self.createCommandFrame(command)
+
+        # Set the currently selected command frame
+        self.selectedFrame = command.getFrame()
+
+        # Place the command frame
+        self.selectedFrame.place(x=FRAME_POSITION[0], y=FRAME_POSITION[1], width=FRAME_SIZE[0], height=FRAME_SIZE[1])
 
     # Edit the selected command
     def editCommand(self, command):
@@ -529,7 +587,7 @@ class MotorControlApp(tk.Frame):
                         c += 1
 
                 # Append the command to the command array in the command type
-                self.getCommandType(name).getCommands().append(Command(name=split[0], command=split[1], variables=variables, description=split[5]))
+                self.getCommandType(name).getCommands().append(Command(name=split[0], command=split[1], variables=variables, description=split[5], frame=tk.Frame(self.frame)))
                 print("\t\t%s command loaded successfully." % self.getCommandType(name).getCommands()[-1].getName())
 
             print("\t%s commands loaded successfully." % name)
