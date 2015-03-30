@@ -37,17 +37,20 @@ class CreateCommandApp(tk.Frame):
         # Pull commands into app
         self.commands = commands
 
+        # Set saved and edit flags
         self.saved = False
         self.edit = False
 
-        # Initialize command
+        # If command exists, set it to blank command
         if command is None:
             self.command = Command()
+        # Else set to command and set edit and saved flags
         else:
             self.command = command
             self.edit = True
             self.saved = True
 
+        # Set command type and callback
         self.type = type
         self.callback = callback
 
@@ -137,20 +140,24 @@ class CreateCommandApp(tk.Frame):
         self.populateTypeMenu()
 
         # Create and place the save button
-        self.saveButton = tk.Button(self.frame, text='Save Command', command=self.checkAndSave)
+        self.saveButton = tk.Button(self.frame, text='Save Command', command=self.checkSaveQuit)
         self.saveButton.place(x=(WINDOW_SIZE[0]/2)-150/2, y=WINDOW_SIZE[1]-30, width=150)
 
+        # in edit mode, populate entry boxes
         if self.edit == True:
+            # Initialize variables, possibles, and currents lists
             vars = []
             possibles = []
             currents = []
 
+            # If variables exist, populate the lists
             if self.command.getVariables():
                 for v in self.command.getVariables():
                     vars.append(v.getSymbol())
                     possibles.append(str(v.getLow()) + "-" + str(v.getHigh()))
                     currents.append(str(v.getCurrentValue()))
 
+            # Populate the entry boxes
             self.nameEntry.insert(0, self.command.getName())
             self.commandEntry.insert(0, self.command.getCommand())
             self.variablesEntry.insert(0, "".join(vars))
@@ -216,8 +223,8 @@ class CreateCommandApp(tk.Frame):
         # Resume focus on create command window
         self.master.focus_force()
 
-    # Check for changes and save if there are any
-    def checkAndSave(self):
+    # Check for changes and save if there are any, then quit
+    def checkSaveQuit(self):
         self.checkForChanges()
 
         if self.saved == False:
@@ -233,6 +240,7 @@ class CreateCommandApp(tk.Frame):
             if self.edit == True:
                 self.deleteCommand()
 
+            # If variables are entered, store them in a list
             variables = []
             if self.variablesEntry.get():
                 count = 0
@@ -471,7 +479,7 @@ class CreateCommandApp(tk.Frame):
 
     # Check if changes have been made since last save attempt
     def checkForChanges(self):
-        # If something has changes, return true
+        # If something has changed, set saved to False and return true
         if self.command.getName() != self.nameEntry.get():
             self.saved = False
             return True
@@ -504,7 +512,7 @@ class CreateCommandApp(tk.Frame):
             self.saved = False
             return True
 
-        # If nothing has changed, return false
+        # If nothing has changed, set saved to True and return false
         self.saved = True
         return False
 

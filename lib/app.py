@@ -93,23 +93,35 @@ class MotorControlApp(tk.Frame):
                         split[4] = split[6]
                         split[5] = split[7]
 
+                    # Initialize variables array
                     vars = []
+
+                    # If variables exist, populate the array
                     if split[2]:
+
+                        # For each variable, get low, high, and current values
                         c = 0
                         for v in split[2]:
+                            # Extract low value as string
                             low = split[3].split()[c].split('-')[0]
 
+                            # If low is in empty string, number is negative so retrieve it and the high value
                             if isinstance(low, str) and low == '':
                                 low = 0 - int(split[3].split()[c].split('-')[1])
                                 high = int(split[3].split()[c].split('-')[2])
+                            # Else if low is 'range' replace it with -1000000 to 1000000
                             elif low == 'range':
                                 low = -1000000
                                 high = 1000000
+                            # If low is anything else (should be a number), set it to integer type
                             else:
-                                low = int(split[3].split()[c].split('-')[0])
+                                low = int(low)
                                 high = int(split[3].split()[c].split('-')[1])
 
+                            # Append info to the variables array
                             vars.append(Variable(symbol=v, low=low, high=high, currentValue=int(split[4].split()[c])))
+
+                            # Increment counter
                             c += 1
 
                     # Append current command to the command type's commands array
@@ -403,6 +415,7 @@ class MotorControlApp(tk.Frame):
             if hasattr(self, 'createInfoWindow') and self.createInfoWindow.status == 'running':
                 self.createInfoWindow.quit()
 
+            # If rename window is opened, kill it
             if hasattr(self, 'renameTypeWindow') and self.renameTypeWindow.status == 'running':
                 self.renameTypeWindow.quit()
 
@@ -485,25 +498,37 @@ class MotorControlApp(tk.Frame):
                     split[4] = split[6]
                     split[5] = split[7]
 
+                # Initialize variables array
                 variables = []
+
+                # If variables exist, populate variables array
                 if split[2]:
+                    # For each variable, get the low, high, and current values
                     c = 0
                     for v in split[2]:
+                        # Extract low value
                         low = split[3].split()[c].split('-')[0]
 
+                        # If low is a blank string, number is negative to retrieve it.
                         if isinstance(low, str) and low == '':
                             low = 0 - int(split[3].split()[c].split('-')[1])
                             high = int(split[3].split()[c].split('-')[2])
+                        # Else if low is 'range' replace it with a range from -1000000 to 1000000
                         elif low == 'range':
                             low = -1000000
                             high = 1000000
+                        # else if low is anything else (it should be a number), set it to an integer type.
                         else:
                             low = int(low)
                             high = int(split[3].split()[c].split('-')[1])
 
+                        # Append info to variables array
                         variables.append(Variable(symbol=v, low=low, high=high, currentValue=int(split[4].split()[c])))
+
+                        # Increment counter
                         c += 1
 
+                # Append the command to the command array in the command type
                 self.getCommandType(name).getCommands().append(Command(name=split[0], command=split[1], variables=variables, description=split[5]))
                 print("\t\t%s command loaded successfully." % self.getCommandType(name).getCommands()[-1].getName())
 
@@ -516,8 +541,6 @@ class MotorControlApp(tk.Frame):
 
         if f:
             self.program = f.readlines()
-
-            print(self.program)
 
             f.close()
 
@@ -534,18 +557,21 @@ class MotorControlApp(tk.Frame):
         if f:
             print("\tSaving command type '%s'..." % self.selectedCommandType.get())
 
-            # Write each command to the file
+            # Iterate through all commands of the selected type
             for command in self.getCommandsOfType(self.selectedCommandType.get()):
+                # Initialize variables, possibles amd values arrays
                 variables = []
                 possibles = []
                 values = []
 
+                # If the command has variables, populate the arrays
                 if command.getVariables():
                     for v in command.getVariables():
                         variables.append(v.getSymbol())
                         possibles.append(str(v.getLow()) + "-" + str(v.getHigh()))
                         values.append(str(v.getCurrentValue()))
 
+                # Write the command to the type file
                 f.write("%s,%s,%s,%s,%s,%s\n" % (command.getName(), command.getCommand(), "".join(variables), " ".join(possibles), " ".join(values), command.getDescription().replace('\n', '')))
                 print("\t\t%s saved successfully." % command.getName())
 
@@ -596,8 +622,10 @@ class MotorControlApp(tk.Frame):
 
     # Delete all commands in the current type and the type itself
     def deleteCommandType(self, prompt=True):
+        # Set sure flag
         sure = False
 
+        # If prompt is True, display message prompt, else proceed to deletion
         if prompt == True:
             # Show messagebox alerting user they are about to delete a command type
             if messagebox.askyesno("Delete Command Type?", "Are you sure you would like to completely erase the command type '%s'?\nThis will delete all commands of this type and will be permanent." % self.selectedCommandType.get()):
