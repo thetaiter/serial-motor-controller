@@ -17,7 +17,7 @@ class RenameTypeApp(tk.Frame):
         self.xPos, self.yPos = self.calculateWindowOffset()
         self.master.geometry("%dx%d%+d%+d" % (WINDOW_SIZE[0], WINDOW_SIZE[1], self.xPos, self.yPos))
         self.master.resizable(width='false', height='false')
-        self.master.title(TITLE + self.ctype.name)
+        self.master.title(TITLE + self.ctype.getName())
 
         # Create frame for object in window
         self.frame = tk.Frame(self.master)
@@ -49,6 +49,7 @@ class RenameTypeApp(tk.Frame):
 
         return x, y
 
+    # Okay button has been clicked
     def okClicked(self):
         self.callback(self.entry.get())
 

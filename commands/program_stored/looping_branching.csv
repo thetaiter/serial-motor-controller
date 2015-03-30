@@ -1,12 +1,12 @@
 L0,L0,,,,Loop continually from the beginning or Loop-to-marker of the current program.
 LM0,LM0,,,,Sets the Loop-to-marker at the current location in the program.
 LM-0,LM-0,,,,Resets the Loop-to-marker to the beginning of the current program.
-Lx,Lx,x,[2-65535],2,Loop from beginning or Loop-to-marker x-1 times (x = 2 to 65,535), when the loop reaches its last count the non-loop command directly preceding will be ignored.
-L-x,L-x,x,[2-65535],2,Loop from beginning or Loop-to-marker x-1 times, alternating direction of motor 1, when the loop reaches its last count the non-loop command directly preceding will be ignored.
-LAx,LAx,x,[2-65535],2,Loop Always from beginning or Loop-tomarker x-1 times (x = 2 to 65,535).
-LA-x,LA-x,x,[2-65535],2,Loop Always from beginning or Loop-tomarker x-1 times, alternating direction of motor 1.
+Lx,Lx,x,2-65535,2,Loop from beginning or Loop-to-marker x-1 times (x = 2 to 65,535), when the loop reaches its last count the non-loop command directly preceding will be ignored.
+L-x,L-x,x,2-65535,2,Loop from beginning or Loop-to-marker x-1 times, alternating direction of motor 1, when the loop reaches its last count the non-loop command directly preceding will be ignored.
+LAx,LAx,x,2-65535,2,Loop Always from beginning or Loop-tomarker x-1 times (x = 2 to 65,535).
+LA-x,LA-x,x,2-65535,2,Loop Always from beginning or Loop-tomarker x-1 times, alternating direction of motor 1.
 LM-2,LM-2,,,,Loop once from beginning or Loop-to-marker reversing index direction of motor 2.
 LM-3,LM-3,,,,Loop once from beginning or Loop-to-marker reversing index direction of motors 1 and 2.
-Jx,Jx,x,[0-4],0,Jump to beginning of program number x, x = 0 to 4.
-JMx,JMx,x,[0-4],0,Jump to beginning of program number x and come back for More after program x ends, x = 0 to 4.
-JM-x,JM-x,x,[0-4],0,Similar to JMx except automatically moves back from absolute indexes after program x ends: For pick-and-place within matrix looping patterns.
+Jx,Jx,x,0-4,0,Jump to beginning of program number x, x = 0 to 4.
+JMx,JMx,x,0-4,0,Jump to beginning of program number x and come back for More after program x ends, x = 0 to 4.
+JM-x,JM-x,x,0-4,0,Similar to JMx except automatically moves back from absolute indexes after program x ends: For pick-and-place within matrix looping patterns.

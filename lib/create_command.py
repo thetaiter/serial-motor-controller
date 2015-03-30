@@ -1,37 +1,31 @@
 # Import built-in libraries
 from collections import namedtuple
-import sys
+import os
 import re
+
+# Import local libraries
+from lib import command, command_type, variable
+Command = command.Command
+CommandType = command_type.CommandType
+Variable = variable.Variable
 
 # Import 3rd party libraries
 import tkinter as tk
 from tkinter import messagebox
 
-# Set path delimiter
-PATH_DELIMITER = ""
-
-if sys.platform.startswith('win'):
-    PATH_DELIMITER = "\\"
-else:
-    PATH_DELIMITER = "/"
-
 # Set Global Variables
 WINDOW_SIZE = [300, 245]
 TITLE = "Create Command"
 HELP = {
-    "Name": "This is the name of your new command. It will be added to the list of custom commands.",
+    "Name": "This is the name of your new command. It will be added to the command type selected below.",
     "Command": "This is the command entry for your new command. If any characters in the command are meant to take adjustable values, place those characters in a string in the variables entry. For example, if your command is \"move_motorM_x\" and you want \"M\" to represent which motor to move, and \"x\" to represent the number of steps to move, place \"Mx\" or \"xM\" in the variables entry.",
     "Variables": "This is the entry for all the variables that you intend to adjust. Do not put spaces or any other characters between them. Leave blank if you do not wish to use variables in this command.",
-    "Possible": "This is the entry for all possible values that your variables can take. For each variable repespectively, you must have a set of possible values. The possible values for each of your variables will need to be space delimited, and must be a range delimited by '-'.  For example: if you have two variables 'xM' and x can take values 1 to 100, and M can take values 0 to 4, you would type '1-100 0-4' in the possible values entry box.",
+    "Possible": "This is the entry for all possible values that your variables can take. For each variable, you must have a set of possible values. The possible values for each of your variables will need to be space delimited, and must be a range with a low and high value delimited by '-'.  For example: if you have two variables 'xM' and x can take values 1 to 100, and M can take values 0 to 4, you would type '1-100 0-4' in this entry box.",
     "Values": "This is the entry for a space delimited list of inital values for the variables you entered. They will be assigned in the order you entered the variables in the variables entry. Leave blank if you did not enter any variables.",
     "Description": "This is the entry for a description of what the command does.",
     "Type": "This is the type of command you want to create. Your command will be organized in menus and things based on it's type. The default new command type is 'Custom'.",
     "NoEntry": "There is no help entry for this item yet."
 }
-
-# Custom structures for Command and Command Type
-Command = namedtuple("Command", ["name", "command", "variables", "possible", "values", "description"])
-CommandType = namedtuple("CommandType", ["name", "path", "commands"])
 
 # Class for the create command app
 class CreateCommandApp(tk.Frame):
@@ -43,17 +37,18 @@ class CreateCommandApp(tk.Frame):
         # Pull commands into app
         self.commands = commands
 
-        self.saved = 'false'
-        self.edit = 'false'
+        self.saved = False
+        self.edit = False
 
         # Initialize command
         if command is None:
-            self.command = Command("", "", "", "", "", "")
+            self.command = Command()
         else:
             self.command = command
-            self.edit = 'true'
-            self.type = type
+            self.edit = True
+            self.saved = True
 
+        self.type = type
         self.callback = callback
 
         # Setup the window
@@ -67,7 +62,7 @@ class CreateCommandApp(tk.Frame):
         # Setup window geometry, position and title
         self.xPos, self.yPos = self.calculateWindowOffset()
         self.master.geometry("%dx%d%+d%+d" % (WINDOW_SIZE[0], WINDOW_SIZE[1], self.xPos, self.yPos))
-        self.master.resizable(width='false', height='false')
+        self.master.resizable(width=False, height=False)
         self.master.title(TITLE)
 
         # Create frame for objects in window
@@ -145,13 +140,23 @@ class CreateCommandApp(tk.Frame):
         self.saveButton = tk.Button(self.frame, text='Save Command', command=self.checkAndSave)
         self.saveButton.place(x=(WINDOW_SIZE[0]/2)-150/2, y=WINDOW_SIZE[1]-30, width=150)
 
-        if self.edit == 'true':
-            self.nameEntry.insert(0, self.command.name)
-            self.commandEntry.insert(0, self.command.command)
-            self.variablesEntry.insert(0, self.command.variables)
-            self.possibleEntry.insert(0, str(self.command.possible).replace('[', '').replace(']', ''))
-            self.valuesEntry.insert(0, self.command.values)
-            self.descriptionEntry.insert(0, self.command.description)
+        if self.edit == True:
+            vars = []
+            possibles = []
+            currents = []
+
+            if self.command.getVariables():
+                for v in self.command.getVariables():
+                    vars.append(v.getSymbol())
+                    possibles.append(str(v.getLow()) + "-" + str(v.getHigh()))
+                    currents.append(str(v.getCurrentValue()))
+
+            self.nameEntry.insert(0, self.command.getName())
+            self.commandEntry.insert(0, self.command.getCommand())
+            self.variablesEntry.insert(0, "".join(vars))
+            self.possibleEntry.insert(0, " ".join(possibles))
+            self.valuesEntry.insert(0, " ".join(currents))
+            self.descriptionEntry.insert(0, self.command.getDescription())
             self.selectedType.set(self.type)
 
         # Set method for when user clicks the window's 'x' button
@@ -171,7 +176,7 @@ class CreateCommandApp(tk.Frame):
     def populateTypeMenu(self):
         # For each type, add an option to the command type menu
         for type in self.commands:
-            self.typeMenu['menu'].add_command(label=type.name, command=lambda name=type.name: self.updateType(name))
+            self.typeMenu['menu'].add_command(label=type.getName(), command=lambda name=type.getName(): self.updateType(name))
 
         # Add an option to adda new type and delete first empty object
         self.typeMenu['menu'].add_command(label="New Type...", command=lambda: self.updateType("New Type..."))
@@ -196,7 +201,7 @@ class CreateCommandApp(tk.Frame):
     def getCommandType(self, ctype):
         count = 0
         for commandType in self.commands:
-            if commandType.name == ctype:
+            if commandType.getName() == ctype:
                 return self.commands[count]
             count += 1
 
@@ -213,47 +218,59 @@ class CreateCommandApp(tk.Frame):
 
     # Check for changes and save if there are any
     def checkAndSave(self):
-        if self.checkForChanges() == 'true':
-            self.saved = 'false'
+        self.checkForChanges()
+
+        if self.saved == False:
             self.saveCommand()
+            self.quitApp()
+        else:
+            self.quitApp()
 
     # Save the current comand entry
     def saveCommand(self):
         # If the entries are valid and not saved yet, save the command else do not save
-        if self.verifyEntries() == 'true' and self.saved == 'false':
-            if self.edit == 'true':
+        if self.verifyEntries() == True and self.saved == False:
+            if self.edit == True:
                 self.deleteCommand()
 
+            variables = []
+            if self.variablesEntry.get():
+                count = 0
+                for v in self.variablesEntry.get():
+                    low = int(self.possibleEntry.get().split()[count].split('-')[0])
+                    high = int(self.possibleEntry.get().split()[count].split('-')[1])
+                    current = int(self.valuesEntry.get().split()[count])
+
+                    variables.append(Variable(symbol=v, low=low, high=high, currentValue=current))
+                    count += 1
+
             # Import entries into self variable
-            self.command = Command(self.nameEntry.get(), self.commandEntry.get(), self.variablesEntry.get(), self.possibleEntry.get(), self.valuesEntry.get(), self.descriptionEntry.get())
+            self.command = Command(name=self.nameEntry.get(), command=self.commandEntry.get(), variables=variables, description=self.descriptionEntry.get().replace('\n', ''))
 
             # If there is text in the type name entry, create a new entry in the _types.csv file and add to commands array, else just update existing command type entry
             if self.typeText.get():
                 # Set the path for the new type
-                path = "commands%s%s.csv" % (PATH_DELIMITER, str.lower(self.typeText.get().replace(" ", "_")))
+                path = "commands%s%s.csv" % (os.sep, str.lower(self.typeText.get().replace(" ", "_")))
 
                 # Update _types.csv
-                with open("commands%s_types.csv" % PATH_DELIMITER, 'a') as file:
-                    file.write("%s,%s\n" % (self.typeText.get(), path.replace(PATH_DELIMITER, '->')))
+                with open("commands%s_types.csv" % os.sep, 'a') as file:
+                    file.write("%s,%s\n" % (self.typeText.get(), path.replace(os.sep, '->')))
                     file.close()
 
                 # Append type to commands
                 self.commands.append(CommandType(name=self.typeText.get(), path=path, commands=[self.command]))
             else:
                 # Update existing command type entry
-                path = self.getCommandType(self.selectedType.get()).path
-                self.getCommandType(self.selectedType.get()).commands.append(self.command)
+                path = self.getCommandType(self.selectedType.get()).getPath()
+                self.getCommandType(self.selectedType.get()).getCommands().append(self.command)
 
             # Open command type file and add new command
             with open(path, 'a') as file:
-                file.write("%s,%s,%s,[%s],%s,%s\n" % (self.command.name, self.command.command, self.command.variables, self.command.possible, self.command.values, self.command.description.replace('\n', '')))
+                file.write("%s,%s,%s,%s,%s,%s\n" % (self.command.getName(), self.command.getCommand(), self.variablesEntry.get(), self.possibleEntry.get(), self.valuesEntry.get(), self.command.getDescription()))
                 file.close()
 
             # Set saved to true
-            self.saved = 'true'
-
-            # Close the create command window
-            self.quitApp()
+            self.saved = True
         else:
             # Resume focus on create command window
             self.master.focus_force()
@@ -265,7 +282,7 @@ class CreateCommandApp(tk.Frame):
 
         # If command exists, delete it from the list of commands
         if typeIndex != -1 and comIndex != -1:
-            del(self.commands[typeIndex].commands[comIndex])
+            del(self.commands[typeIndex].getCommands()[comIndex])
 
         # Read file where command originated from
         file = open(self.getPath(self.type), 'r')
@@ -275,7 +292,7 @@ class CreateCommandApp(tk.Frame):
         # Overwrite the file with all entries except desired command to delete
         with open(self.getPath(self.type), 'w') as file:
             for line in lines:
-                if not line.startswith(self.command.name):
+                if not line.startswith(self.command.getName()):
                     file.write(line)
             file.close()
 
@@ -285,9 +302,9 @@ class CreateCommandApp(tk.Frame):
         typeCount = 0
         for ctype in self.commands:
             comCount = 0
-            for command in ctype.commands:
+            for command in ctype.getCommands():
                 # If command name is same as desired command, return index of type and command
-                if command.name == self.command.name:
+                if command.getName() == self.command.getName():
                     return typeCount, comCount
                 # Incrememnt command counter
                 comCount += 1
@@ -300,8 +317,8 @@ class CreateCommandApp(tk.Frame):
     # Get the file path of the commands that are of the specified type
     def getPath(self, ctype):
         for ct in self.commands:
-            if ct.name == ctype:
-                return ct.path
+            if ct.getName() == ctype:
+                return ct.getPath()
 
     # Find specific chars in a string
     def findCharsInString(self, string, chars):
@@ -329,7 +346,7 @@ class CreateCommandApp(tk.Frame):
         if not self.nameEntry.get() or not self.nameEntry.get().replace(" ", ""):
             self.nameEntry.delete(0, 'end')
             messagebox.showerror("No Name", "Error: You must enter a name for this command.")
-            return 'false'
+            return False
 
         # Strip spaces off beginning and end of name entry
         stripped = " ".join(self.nameEntry.get().split())
@@ -340,7 +357,7 @@ class CreateCommandApp(tk.Frame):
         if not self.commandEntry.get() or not self.commandEntry.get().replace(" ", ""):
             self.commandEntry.delete(0, 'end')
             messagebox.showerror("No Command", "Error: You must enter a command.")
-            return 'false'
+            return False
 
         # Strip spaces off beginning and end of command entry
         stripped = self.commandEntry.get().strip()
@@ -351,19 +368,19 @@ class CreateCommandApp(tk.Frame):
         if (self.variablesEntry.get() and self.variablesEntry.get().replace(" ", "")) and (not self.possibleEntry.get() or not self.possibleEntry.get().replace(" ", "")):
             self.possibleEntry.delete(0, 'end')
             messagebox.showerror("No Possible Values", "Error: If you enter a variable, you must enter possible values for each variable.")
-            return 'false'
+            return False
 
         # If variables exist but no values are entered, display messagebox and return false
         if (self.variablesEntry.get() and self.variablesEntry.get().replace(" ", "")) and (not self.valuesEntry.get() or not self.valuesEntry.get().replace(" ", "")):
             self.valuesEntry.delete(0, 'end')
             messagebox.showerror("No Values", "Error: If you enter a variable, you must enter an initial value for it.")
-            return 'false'
+            return False
 
         # If values or possible values are entered and no variables are entered, display  messagebox and return false
         if (not self.variablesEntry.get() or not self.variablesEntry.get().replace(" ", "")) and ((self.valuesEntry.get() and self.valuesEntry.get().replace(" ", "")) or (self.possibleEntry.get() and self.valuesEntry.get().replace(" ", ""))):
             self.variablesEntry.delete(0, 'end')
-            messagebox.showerror("No Variables", "Error: You mest enter a valid variable in order to set initial values.")
-            return 'false'
+            messagebox.showerror("No Variables", "Error: You mest enter a valid variable in order to set initial or possible values.")
+            return False
 
         # If previous tests have passed and there are variables present, verify that values and possible values are valid
         if self.variablesEntry.get():
@@ -378,15 +395,18 @@ class CreateCommandApp(tk.Frame):
             self.valuesEntry.delete(0, 'end')
             self.valuesEntry.insert(0, stripped)
 
+            def count_iteratable(iter):
+                return sum(1 for e in iter)
+
             # If all variables provided are not found at least once within the command string, display messagebox and return false
-            if len(self.findCharsInString(self.commandEntry.get(), self.variablesEntry.get()).keys()) != len(self.variablesEntry.get()):
+            if count_iteratable(self.findCharsInString(self.commandEntry.get(), self.variablesEntry.get()).keys()) != len(self.variablesEntry.get()):
                 messagebox.showerror("Invalid Variables", "One or more of the variables you entered are not in the command string.")
-                return 'false'
+                return False
 
             # If the number of variables is not equal to the number of possible values provided, display messagebox and return false
             if len(self.variablesEntry.get()) != len(self.possibleEntry.get().split()):
                 messagebox.showerror("Invalid Possible Values", "The number of possible values you have entered is not equal to the number of variables you entered.")
-                return 'false'
+                return False
 
             # Verify that all possible values are of the proper format for a ranege of values
             for possible in self.possibleEntry.get().split():
@@ -396,12 +416,12 @@ class CreateCommandApp(tk.Frame):
                 # Check if range matches regular expression, if not display messagebox and return false
                 if regex.match(possible) is None:
                     messagebox.showerror("Invalid Possible Value", "The possible value '%s' that you entered is of the incorrect format. It must be of the format 'L-H' where 'L' is the lower bound value and H is the upper bound value." % possible)
-                    return 'false'
+                    return False
 
             # If the number of variables is not equal to the number of values provided, display messagebox and return false
             if len(self.variablesEntry.get()) != len(self.valuesEntry.get().split()):
                 messagebox.showerror("Invalid Values", "The number of values you have entered is not equal to the number of variables you entered.")
-                return 'false'
+                return False
 
             # Verify that values provided are within the range of possible values provided
             possibles = self.possibleEntry.get().split()
@@ -416,7 +436,7 @@ class CreateCommandApp(tk.Frame):
                 # Check if value is within lower and upper bounds. If not, display messagebox and return false
                 if value < lower:
                     messagebox.showerror("Invalid value", "The value '%s' is invalid because it is below the range specified in possible values. The possible values you entered range from %s to %s." % (value, lower, upper))
-                    return 'false'
+                    return False
                 elif value > upper:
                     messagebox.showerror("Invalid value", "The value '%s' is invalid because it is above the range specified in possible values. The possible values you entered range from %s to %s." % (value, lower, upper))
                     return 'flase'
@@ -428,48 +448,65 @@ class CreateCommandApp(tk.Frame):
         if not self.descriptionEntry.get() or not self.descriptionEntry.get().replace(" ", ""):
             self.descriptionEntry.delete(0, 'end')
             messagebox.showerror("No Description", "Error: You must enter a description for this command.")
-            return 'false'
+            return False
 
         # If New Type... is selected and no type name is entered, display messagebox and return false
         if self.selectedType.get() == "New Type...":
             if not self.typeText.get() or not self.typeText.get().replace(" ", ""):
                 self.typeText.set("")
                 messagebox.showerror("No Type", "Error: You must enter the name of your new type if you have 'New Type' selected.")
-                return 'false'
+                return False
 
             if self.getCommandType(self.typeText.get()) is not None:
                 messagebox.showerror("Duplicate Name", "Error: The type name you have entered already exists.")
-                return 'false'
-        elif self.edit == 'false':
+                return False
+        elif self.edit == False:
             for command in self.getCommandType(self.selectedType.get()).commands:
                 if self.nameEntry.get() == command.name:
                     messagebox.showerror("Duplicate Name", "Error: The command name you have entered already exists in this type. Please enter a new name to continue.")
-                    return 'false'
+                    return False
 
         # If all validations pass, return true
-        return 'true'
+        return True
 
     # Check if changes have been made since last save attempt
     def checkForChanges(self):
-        # Initialize values
-        variables = ""
-        possible = ""
-        values = ""
+        # If something has changes, return true
+        if self.command.getName() != self.nameEntry.get():
+            self.saved = False
+            return True
 
-        # Check if variables, possible values, and values are entered
-        if self.variablesEntry.get():
-           variables = self.variablesEntry.get()
-        if self.possibleEntry.get():
-            possible = self.possibleEntry.get()
-        if self.valuesEntry.get():
-            values = self.valuesEntry.get()
+        if self.command.getCommand() != self.commandEntry.get():
+            self.saved = False
+            return True
+
+        variables = []
+        possibles = []
+        values = []
+        for v in self.command.getVariables():
+            variables.append(v.getSymbol())
+            possibles.append(str(v.getLow()) + "-" + str(v.getHigh()))
+            values.append(str(v.getCurrentValue()))
+
+        if "".join(variables) != self.variablesEntry.get():
+            self.saved = False
+            return True
+
+        if " ".join(possibles) != self.possibleEntry.get():
+            self.saved = False
+            return True
+
+        if " ".join(values) != self.valuesEntry.get():
+            self.saved = False
+            return True
+
+        if self.command.getDescription() != self.descriptionEntry.get():
+            self.saved = False
+            return True
 
         # If nothing has changed, return false
-        if self.command.name == self.nameEntry.get() and self.command.command == self.commandEntry.get() and self.command.variables == variables and self.command.possible == possible and self.command.values == values and self.command.description == self.descriptionEntry.get():
-            return 'false'
-
-        # If something has changed, return true
-        return 'true'
+        self.saved = True
+        return False
 
     # Run the application
     def run(self):
@@ -486,8 +523,10 @@ class CreateCommandApp(tk.Frame):
 
     # Quit the application
     def quitApp(self):
-        # If the user would like to save teh command, command is saved, else command is not saved
-        if self.saved == 'false' or self.checkForChanges() == 'true':
+        # If the user would like to save teh command, command is saved, else command is not
+        self.checkForChanges()
+
+        if self.saved == False:
             if messagebox.askyesno("Save Command?", "Would you like to save this command?"):
                 self.saveCommand()
 

@@ -1,15 +1,15 @@
-setMmMx,setMmMx,mx,[1-4 1-4],1 1,Set axis m for motor type/size x.
+setMmMx,setMmMx,mx,1-4 1-4,1 1,Set axis m for motor type/size x.
 setDMx,setDMx,,,,Set VXM/VP9000 or NF90 emulation modes, and other operating parameters.
 setDAx,setDAx,,,,Set Analog Joystick Deadband value.
-setjmM,setjmM,m,[1-4],1,Set first Jog Speed setting motor m.
-setjAmM,setjAmM,m,[1-4],1,Set first Analog Joystick range setting for motor m.
-setJmM,setJmM,m,[1-4],1,Set second Jog Speed setting for motor m.
-setJAmM,setJAmM,m,[1-4],1,Set second Analog Joystick range for motor m.
-setLmMx,setLmMx,m,[1-4],1,Set limit switch mode for axis m.
-setPmMx,setPmMx,m,[1-4],1,Set "Pulse Every number Steps" on output 2 for axis m.
-setPAx,setPAx,x,[1-255],100,Set Pulse width used by setPmMx and U7, x = 1 to 255 (10 microsecond increments).
+setjmM,setjmM,m,1-4,1,Set first Jog Speed setting motor m.
+setjAmM,setjAmM,m,1-4,1,Set first Analog Joystick range setting for motor m.
+setJmM,setJmM,m,1-4,1,Set second Jog Speed setting for motor m.
+setJAmM,setJAmM,m,1-4,1,Set second Analog Joystick range for motor m.
+setLmMx,setLmMx,m,1-4,1,Set limit switch mode for axis m.
+setPmMx,setPmMx,m,1-4,1,Set "Pulse Every number Steps" on output 2 for axis m.
+setPAx,setPAx,x,1-255,100,Set Pulse width used by setPmMx and U7, x = 1 to 255 (10 microsecond increments).
 setIx,setIx,,,,Set operating mode of inputs.
-setBx,setBx,x,[9 19 38],9,Set RS-232 Baud rate (9 = 9600, 19 = 19200, 38 = 38400).
-Bx,Bx,x,[0-1],0,Backlash compensation, 20 steps when x = 1, off when x = 0.
-Ox,Ox,x,[0-3],0,Indicate limit switch Over-travel to host, off when x = 0, VXM sends "O" when x = 1 and hit limit, x = 3 program stops too.
-PMAx,PMAx,x,[1-255],1,Program Associate program x in Master to program x in Slave (Linked VXMs start the same time) (255 = default/disabled).
+setBx,setBx,x,9-38,9,Set RS-232 Baud rate (9 = 9600, 19 = 19200, 38 = 38400).
+Bx,Bx,x,0-1,0,Backlash compensation, 20 steps when x = 1, off when x = 0.
+Ox,Ox,x,0-3,0,Indicate limit switch Over-travel to host, off when x = 0, VXM sends "O" when x = 1 and hit limit, x = 3 program stops too.
+PMAx,PMAx,x,1-255,1,Program Associate program x in Master to program x in Slave (Linked VXMs start the same time) (255 = default/disabled).

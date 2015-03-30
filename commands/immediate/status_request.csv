@@ -18,17 +18,17 @@ O,O,,,,Read Indicate limit switch setting.
 D,D,,,,Read/Digitize motor position (Jog Mode).
 PM,PM,,,,Request the number of the current Program.
 PMA,PMA,,,,Request the current program associate number (255 = default/disabled).
-getMmM,getMmM,m,[1-4],1,Read motor type/size selected for axis m.
+getMmM,getMmM,m,1-4,1,Read motor type/size selected for axis m.
 getDM,getDM,,,,Read operating mode of VXM (8 bit binary value).
 getD0,getD0,,,,Gets the VXM's firmware version in the format X.XX.
 getD1,getD1,,,,Gets the VXM's firmware date code in the format XX-XX-XX (month/date/year).
 getD2,getD2,,,,Return 2 if system is a single VXM, returns 4 if VXM is a Master.
 getDA,getDA,,,,Read Analog Joystick Deadband setting.
-getjmM,getjmM,m,[1-4],1,Read first Jog Speed setting for motor m.
-getjAmM,getjAmM,m,[1-4],1,Read first Analog Joystick range for motor m.
-getJmM,getJmM,m,[1-4],1,Read second Jog Speed setting for motor m.
-getJAmM,getJAmM,m,[1-4],1,Read second Analog Joystick range for motor m.
-getLmM,getLmM,m,[1-4],1,Read mode of limits for motor m.
-getPmM,getPmM,m,[1-4],1,Read "Pulse Every x number Step" value for axis m.
+getjmM,getjmM,m,1-4,1,Read first Jog Speed setting for motor m.
+getjAmM,getjAmM,m,1-4,1,Read first Analog Joystick range for motor m.
+getJmM,getJmM,m,1-4,1,Read second Jog Speed setting for motor m.
+getJAmM,getJAmM,m,1-4,1,Read second Analog Joystick range for motor m.
+getLmM,getLmM,m,1-4,1,Read mode of limits for motor m.
+getPmM,getPmM,m,1-4,1,Read "Pulse Every x number Step" value for axis m.
 getPA,getPA,,,,Read Pulse width used by setPmMx and U7.
 getI,getI,,,,Read operating mode for user inputs.

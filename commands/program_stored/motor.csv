@@ -1,13 +1,13 @@
-lmMx,lmMx,mx,[1-4 1-16777215],1 500,Set steps to incremental Index motor CW (positive) m = motor no. (1, 2, 3, 4), x = 1 to 16,777,215.
-lmM-x,lmM-x,mx,[1-4 1-16777215],1 500,Set steps to incremental Index motor CCW (negative) m = motor no. (1, 2, 3, 4), x = 1 to 16,777,215.
-lAmMx,lAmMx,mx,[1-4 -16777215-16777215],1 500,Set Absolute Index distance, m = motor no. (1, 2, 3, 4), x = (+ or -)1 to (+ or -)16,777,215.
-IAmM0,IAmM0,m,[1-4],1,Index motor to Absolute zero position, m = motor no. (1, 2, 3, 4).
-IAmM-0,IAmM-0,m,[1-4],1,Zero motor position for motor no. m, m = 1, 2, 3, 4.
-ImM0,ImM0,m,[1-4],1,Index motor until positive limit is encountered, m = motor no. (1, 2, 3, 4).
-ImM-0,ImM-0,m,[1-4],1,Index motor until negative limit is encountered, m = motor no. (1, 2, 3, 4).
-(i3,i1...),(i3,i1...),,,,Combine Index commands to run simultaneously on two VXM controllers connected by VXM bus.
-SmMx,SmMx,mx,[1-4 1-6000],1 2000,Set speed of motor (70% power), m = motor no. (1, 2, 3, 4), x = 1 to 6000 step/sec.
-SAmMx,SAmMx,mx,[1-4 1-6000],1 2000,Set speed of motor (100% power), m = motor no. (1, 2, 3, 4), x = 1 to 6000 step/sec.
-SmM-x,SmM-x,mx,range,1 10,Read and assign analog input value to motor m speed (70% power), x = range.
-SAmM-x,SAmM-x,mx,range,1 10,Read and assign analog input value to motor m speed (100% power), x = range.
-AmMx,AmMx,mx,[1-4 1-127],1 100,Acceleration/deceleration, m = motor no. (1, 2, 3, 4), x = 1 to 127.
+lmMx,lmMx,mx,1-4 1-16777215,1 500,Set steps to incremental Index motor CW (positive) m = motor no. (1, 2, 3, 4), x = 1 to 16,777,215.
+lmM-x,lmM-x,mx,1-4 1-16777215,1 500,Set steps to incremental Index motor CCW (negative) m = motor no. (1, 2, 3, 4), x = 1 to 16,777,215.
+lAmMx,lAmMx,mx,1-4 -16777215-16777215,1 500,Set Absolute Index distance, m = motor no. (1, 2, 3, 4), x = (+ or -)1 to (+ or -)16,777,215.
+IAmM0,IAmM0,m,1-4,1,Index motor to Absolute zero position, m = motor no. (1, 2, 3, 4).
+IAmM-0,IAmM-0,m,1-4,1,Zero motor position for motor no. m, m = 1, 2, 3, 4.
+ImM0,ImM0,m,1-4,1,Index motor until positive limit is encountered, m = motor no. (1, 2, 3, 4).
+ImM-0,ImM-0,m,1-4,1,Index motor until negative limit is encountered, m = motor no. (1, 2, 3, 4).
+(i3, i1...),(i3, i1...),,,,Combine Index commands to run simultaneously on two VXM controllers connected by VXM bus.
+SmMx,SmMx,mx,1-4 1-6000,1 2000,Set speed of motor (70% power), m = motor no. (1, 2, 3, 4), x = 1 to 6000 step/sec.
+SAmMx,SAmMx,mx,1-4 1-6000,1 2000,Set speed of motor (100% power), m = motor no. (1, 2, 3, 4), x = 1 to 6000 step/sec.
+SmM-x,SmM-x,mx,range range,1 10,Read and assign analog input value to motor m speed (70% power), x = range.
+SAmM-x,SAmM-x,mx,range range,1 10,Read and assign analog input value to motor m speed (100% power), x = range.
+AmMx,AmMx,mx,1-4 1-127,1 100,Acceleration/deceleration, m = motor no. (1, 2, 3, 4), x = 1 to 127.
