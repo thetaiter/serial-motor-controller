@@ -194,7 +194,7 @@ class MotorControlApp(tk.Frame):
 
             # Create and place an entry for the value of the variable
             entry = tk.Entry(command.getFrame(), textvariable=self.variables[variable.getSymbol()])
-            entry.place(x=30, y=yPosition, width=50)
+            entry.place(x=30, y=yPosition, width=65)
 
             # Set variable value to current value
             self.variables[variable.getSymbol()].set(command.getVariable(variable.getSymbol()).getCurrentValue())
@@ -204,7 +204,7 @@ class MotorControlApp(tk.Frame):
 
             # Create label for possible values
             possibleLabel = tk.Label(command.getFrame(), text="Possible: %s - %s" % (low, high), anchor='w')
-            possibleLabel.place(x=85, y=yPosition, width=200)
+            possibleLabel.place(x=100, y=yPosition)
 
             # Increment the y position
             yPosition += 30
@@ -219,53 +219,89 @@ class MotorControlApp(tk.Frame):
         self.master.title(TITLE)
 
         # Create the Command entry box
-        self.currentCommand = tk.StringVar()
+        self.currentCommand = tk.StringVar(self.frame)
         self.commandEntry = tk.Entry(self.frame, textvariable=self.currentCommand)
         self.currentCommand.set(ENTER_COMMAND_MESSAGE)
-        self.commandEntry.place(x=0, y=0, width=WINDOW_SIZE[0])
+        self.commandEntry.place(x=0, y=0, width=width)
         print("\tcommandEntry created successfully.")
 
         # Create send button
         self.sendButton = tk.Button(self.frame, text='Send Custom Command', command=self.sendCommand)
-        self.sendButton.place(x=0, y=18, width=WINDOW_SIZE[0])
+        self.sendButton.place(x=0, y=18, width=width)
         print("\tsendButton created successfully.")
 
+        # Create Divider labels
+        self.dividerLabel1 = tk.Label(self.frame, bg='black')
+        self.dividerLabel1.place(x=0, y=46, width=width, height=2)
+        self.dividerLabel2 = tk.Label(self.frame, bg='black')
+        self.dividerLabel2.place(x=283, y=48, width=2, height=height-64)
+        self.dividerLabel3 = tk.Label(self.frame, bg='black')
+        self.dividerLabel3.place(x=0, y=101, width=width-117, height=2)
+
+        # Create Option Menu Labels
+        self.typeLabel = tk.Label(self.frame, text="Command Type", relief=tk.GROOVE)
+        self.typeLabel.place(x=2, y=50, width=155)
+        self.commandLabel = tk.Label(self.frame, text="Command", relief=tk.GROOVE)
+        self.commandLabel.place(x=158, y=50, width=124)
+        self.actionsLabel = tk.Label(self.frame, text="Actions", relief=tk.GROOVE)
+        self.actionsLabel.place(x=287, y=50, width=width-288)
+
         # Create Option Menu for command types
-        self.selectedCommandType = tk.StringVar()
+        self.selectedCommandType = tk.StringVar(self.frame)
         self.commandTypeMenu = tk.OptionMenu(self.frame, self.selectedCommandType, ())
         self.commandTypeMenu['menu'].config(postcommand=lambda: self.populateCommandTypeMenu())
         self.populateCommandTypeMenu()
-        self.commandTypeMenu.place(x=5, y=50, width=147)
+        self.commandTypeMenu.place(x=2, y=70, width=155)
         print("\tcommandTypeMenu created successfully.")
 
         # Create Option Menu for commands
-        self.selectedCommand = tk.StringVar()
+        self.selectedCommand = tk.StringVar(self.frame)
         self.commandMenu = tk.OptionMenu(self.frame, self.selectedCommand, ())
         self.selectedCommand.set(self.commandMenu["menu"].entrycget(0, "label"))
         self.populateCommandMenu()
-        self.commandMenu.place(x=157, y=50, width=93)
+        self.commandMenu.place(x=158, y=70, width=124)
         print("\tcommandMenu created successfully.")
 
         # Create Button to send command
         self.sendCommandButton = tk.Button(self.frame, text='Send Command', command=lambda: self.sendCommand(self.getCurrentCommand()))
-        self.sendCommandButton.place(x=255, y=52, width=WINDOW_SIZE[0]-260, height=27)
+        self.sendCommandButton.place(x=287, y=72, width=width-289, height=27)
         print("\tsendCommandButton created successfully.")
 
         # Create Button to edit the current command
         self.editCommandButton = tk.Button(self.frame, text='Edit Command', command=lambda: self.editCommand(self.getCurrentCommand()))
-        self.editCommandButton.place(x=255, y=84, width=WINDOW_SIZE[0]-260, height=27)
+        self.editCommandButton.place(x=287, y=102, width=width-289, height=27)
         print("\teditCommandButton created successfully")
+
+        # Create the save button for current command
+        self.saveButton = tk.Button(self.frame, text='Save Command', command=lambda: self.saveCommand())
+        self.saveButton.place(x=287, y=132, width=width-289, height=27)
+        print("\tsaveButton created successfully.")
 
         # Create Button to delete the current command
         self.deleteCommandButton = tk.Button(self.frame, text='Delete Command', command=lambda: self.deleteCommand(self.getCurrentCommand()))
-        self.deleteCommandButton.place(x=255, y=116, width=WINDOW_SIZE[0]-260, height=27)
+        self.deleteCommandButton.place(x=287, y=162, width=width-289, height=27)
         print("\tdeleteCommandButton created successfully")
 
+        # Create Button to delete the current command
+        self.renameTypeButton = tk.Button(self.frame, text='Rename Type', command=lambda: self.renameCommandType())
+        self.renameTypeButton.place(x=287, y=192, width=width-289, height=27)
+        print("\trenameTypeButton created successfully")
+
+        # Create Button to delete the current type
+        self.deleteTypeButton = tk.Button(self.frame, text='Delete Type', command=lambda: self.deleteCommandType())
+        self.deleteTypeButton.place(x=287, y=222, width=width-289, height=27)
+        print("\tdeleteTypeButton created successfully.")
+
+        # Create load program button
+        self.loadProgramButton = tk.Button(self.frame, text='Load Program', command=lambda: self.loadProgram())
+        self.loadProgramButton.place(x=287, y=252, width=width-289, height=27)
+        print("\tloadProgramButton created successfully.")
+
         # Create Info entry box
-        self.info = tk.StringVar()
-        self.infoLabel = tk.Entry(self.frame, textvariable=self.info, state='readonly', width=WINDOW_SIZE[0])
+        self.info = tk.StringVar(self.frame)
+        self.infoLabel = tk.Entry(self.frame, textvariable=self.info, state='readonly', width=width)
         self.info.set(INFO_PRESET_MESSAGE)
-        self.infoLabel.place(x=0, y=WINDOW_SIZE[1]-18)
+        self.infoLabel.place(x=0, y=height-18)
         print("\tinfoLabel created successfully.")
 
         # Set method for when user clicks the window's 'x' button
