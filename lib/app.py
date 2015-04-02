@@ -26,18 +26,27 @@ NO_PORTS_MESSAGE =  'No Ports Detected'
 ENTER_COMMAND_MESSAGE = 'Enter a custom command here'
 INFO_PRESET_MESSAGE = 'Info will be printed here'
 AVAILABLE_BAUDS = ["9600", "19200", "38400"]
+FRAME_POSITION = [0, 103]
+FRAME_SIZE = [WINDOW_SIZE[0]-117, WINDOW_SIZE[1]-64]
 
 # Main app class with all major app functions
 class MotorControlApp(tk.Frame):
     # Constructor initialization function
     def __init__(self, master):
-        print("\nInitializing Tkinter frame...\n")
+        print("\nInitializing Tkinter frame...")
 
         # Initialize the TK frame
         tk.Frame.__init__(self, master)
 
         self.setup = False
         self.program = ''
+
+        # Create master frame
+        self.frame = tk.Frame(self.master)
+        self.frame.place(x=0, y=0, width=WINDOW_SIZE[0], height=WINDOW_SIZE[1])
+        print("\tFrame created successfully.")
+
+        self.selectedFrame = tk.Frame(self.frame)
 
         # Load commands into the program
         self.loadCommands()
@@ -125,7 +134,10 @@ class MotorControlApp(tk.Frame):
                             c += 1
 
                     # Append current command to the command type's commands array
-                    self.COMMANDS[count].getCommands().append(Command(name=split[0], command=split[1], variables=vars, description=split[5].replace('\n', ''), frame=tk.Frame()))
+                    self.COMMANDS[count].getCommands().append(Command(name=split[0], command=split[1], variables=vars, description=split[5].replace('\n', ''), frame=tk.Frame(self.frame)))
+
+                    # Set up the command frame
+                    self.createCommandFrame(self.COMMANDS[count].getCommands()[-1])
 
                     print("\t\t%s command loaded successfully." % self.COMMANDS[count].getCommands()[-1].getName())
 
@@ -146,6 +158,9 @@ class MotorControlApp(tk.Frame):
                     if not l.__contains__(name):
                         file.write(l)
 
+        self.sortCommandTypes()
+        self.sortCommands()
+
         if self.setup == True:
             self.selectedCommandType.set(self.commandTypeMenu['menu'].entrycget(0, 'label'))
 
@@ -153,6 +168,19 @@ class MotorControlApp(tk.Frame):
     def clearCommands(self):
         self.COMMANDS = []
         print("\tCommands cleared successfully.")
+
+    # Sort command types
+    def sortCommandTypes(self):
+        self.COMMANDS.sort(key=lambda ctype: ctype.getName().lower())
+
+    # Srt commands in type
+    def sortCommands(self, ctype=None):
+        if ctype:
+            ctype.getCommands().sort(key=lambda c: c.getName().lower())
+        else:
+            for ct in self.COMMANDS:
+                if ct.getCommands():
+                    ct.getCommands().sort(key=lambda c: c.getName().lower())
 
     # Calculate window position on screen
     def calculateWindowOffset(self):
@@ -164,6 +192,38 @@ class MotorControlApp(tk.Frame):
 
         return x, y
 
+    # Setup specified command frame
+    def createCommandFrame(self, command):
+        # Create and place variables label
+        variablesLabel = tk.Label(command.getFrame(), text="Variables", relief=tk.GROOVE)
+        variablesLabel.place(x=2, y=2, width=280)
+
+        # Set initial y position
+        yPosition = 30
+
+        # Iterate through variables
+        for variable in command.getVariables():
+            # Make a label for the variable
+            label = tk.Label(command.getFrame(), text=variable.getSymbol() + ':')
+            label.place(x=5, y=yPosition, width=25)
+
+            # Create and place an entry for the value of the variable
+            variable.setEntry(tk.Entry(command.getFrame()))
+            variable.getEntry().place(x=30, y=yPosition, width=65)
+
+            # Set variable value to current value
+            variable.setEntryValue(variable.getCurrentValue())
+
+            # Get low nad high values
+            low, high = variable.getLowAndHigh()
+
+            # Create label for possible values
+            possibleLabel = tk.Label(command.getFrame(), text="Possible: %s - %s" % (low, high), anchor='w')
+            possibleLabel.place(x=100, y=yPosition)
+
+            # Increment the y position
+            yPosition += 30
+
     # Set up the tkinter window
     def setupWindow(self, width, height, xoffset, yoffset):
         print("Settings up window w=%s, h=%s, xoffset=%s, yoffset=%s..."% (width, height, xoffset, yoffset))
@@ -173,59 +233,91 @@ class MotorControlApp(tk.Frame):
         self.master.resizable(width=False, height=False)
         self.master.title(TITLE)
 
-        # Create master frame
-        self.frame = tk.Frame(self.master)
-        self.frame.place(x=0, y=0, width=width, height=height)
-        print("\tframe created successfully.")
-
         # Create the Command entry box
-        self.currentCommand = tk.StringVar()
+        self.currentCommand = tk.StringVar(self.frame)
         self.commandEntry = tk.Entry(self.frame, textvariable=self.currentCommand)
         self.currentCommand.set(ENTER_COMMAND_MESSAGE)
-        self.commandEntry.place(x=0, y=0, width=WINDOW_SIZE[0])
+        self.commandEntry.place(x=0, y=0, width=width)
         print("\tcommandEntry created successfully.")
 
         # Create send button
         self.sendButton = tk.Button(self.frame, text='Send Custom Command', command=self.sendCommand)
-        self.sendButton.place(x=0, y=18, width=WINDOW_SIZE[0])
+        self.sendButton.place(x=0, y=18, width=width)
         print("\tsendButton created successfully.")
 
+        # Create Divider labels
+        self.dividerLabel1 = tk.Label(self.frame, bg='black')
+        self.dividerLabel1.place(x=0, y=46, width=width, height=2)
+        self.dividerLabel2 = tk.Label(self.frame, bg='black')
+        self.dividerLabel2.place(x=283, y=48, width=2, height=height-64)
+        self.dividerLabel3 = tk.Label(self.frame, bg='black')
+        self.dividerLabel3.place(x=0, y=101, width=width-117, height=2)
+
+        # Create Option Menu Labels
+        self.typeLabel = tk.Label(self.frame, text="Command Type", relief=tk.GROOVE)
+        self.typeLabel.place(x=2, y=50, width=155)
+        self.commandLabel = tk.Label(self.frame, text="Command", relief=tk.GROOVE)
+        self.commandLabel.place(x=158, y=50, width=124)
+        self.actionsLabel = tk.Label(self.frame, text="Actions", relief=tk.GROOVE)
+        self.actionsLabel.place(x=287, y=50, width=width-288)
+
         # Create Option Menu for command types
-        self.selectedCommandType = tk.StringVar()
+        self.selectedCommandType = tk.StringVar(self.frame)
         self.commandTypeMenu = tk.OptionMenu(self.frame, self.selectedCommandType, ())
         self.commandTypeMenu['menu'].config(postcommand=lambda: self.populateCommandTypeMenu())
         self.populateCommandTypeMenu()
-        self.commandTypeMenu.place(x=5, y=50, width=147)
+        self.commandTypeMenu.place(x=2, y=70, width=155)
         print("\tcommandTypeMenu created successfully.")
 
         # Create Option Menu for commands
-        self.selectedCommand = tk.StringVar()
+        self.selectedCommand = tk.StringVar(self.frame)
         self.commandMenu = tk.OptionMenu(self.frame, self.selectedCommand, ())
+        self.commandMenu['menu'].config(postcommand=lambda: self.populateCommandMenu())
         self.selectedCommand.set(self.commandMenu["menu"].entrycget(0, "label"))
         self.populateCommandMenu()
-        self.commandMenu.place(x=157, y=50, width=93)
+        self.commandMenu.place(x=158, y=70, width=124)
         print("\tcommandMenu created successfully.")
 
         # Create Button to send command
         self.sendCommandButton = tk.Button(self.frame, text='Send Command', command=lambda: self.sendCommand(self.getCurrentCommand()))
-        self.sendCommandButton.place(x=255, y=52, width=WINDOW_SIZE[0]-260, height=27)
+        self.sendCommandButton.place(x=287, y=72, width=width-289, height=27)
         print("\tsendCommandButton created successfully.")
 
         # Create Button to edit the current command
         self.editCommandButton = tk.Button(self.frame, text='Edit Command', command=lambda: self.editCommand(self.getCurrentCommand()))
-        self.editCommandButton.place(x=255, y=84, width=WINDOW_SIZE[0]-260, height=27)
+        self.editCommandButton.place(x=287, y=102, width=width-289, height=27)
         print("\teditCommandButton created successfully")
+
+        # Create the save button for current command
+        self.saveButton = tk.Button(self.frame, text='Save Command', command=lambda: self.saveCommand(self.getCurrentCommand()))
+        self.saveButton.place(x=287, y=132, width=width-289, height=27)
+        print("\tsaveButton created successfully.")
 
         # Create Button to delete the current command
         self.deleteCommandButton = tk.Button(self.frame, text='Delete Command', command=lambda: self.deleteCommand(self.getCurrentCommand()))
-        self.deleteCommandButton.place(x=255, y=116, width=WINDOW_SIZE[0]-260, height=27)
+        self.deleteCommandButton.place(x=287, y=162, width=width-289, height=27)
         print("\tdeleteCommandButton created successfully")
 
+        # Create Button to delete the current command
+        self.renameTypeButton = tk.Button(self.frame, text='Rename Type', command=lambda: self.renameCommandType())
+        self.renameTypeButton.place(x=287, y=192, width=width-289, height=27)
+        print("\trenameTypeButton created successfully")
+
+        # Create Button to delete the current type
+        self.deleteTypeButton = tk.Button(self.frame, text='Delete Type', command=lambda: self.deleteCommandType())
+        self.deleteTypeButton.place(x=287, y=222, width=width-289, height=27)
+        print("\tdeleteTypeButton created successfully.")
+
+        # Create load program button
+        self.loadProgramButton = tk.Button(self.frame, text='Load Program', command=lambda: self.loadProgram())
+        self.loadProgramButton.place(x=287, y=252, width=width-289, height=27)
+        print("\tloadProgramButton created successfully.")
+
         # Create Info entry box
-        self.info = tk.StringVar()
-        self.infoLabel = tk.Entry(self.frame, textvariable=self.info, state='readonly', width=WINDOW_SIZE[0])
+        self.info = tk.StringVar(self.frame)
+        self.infoLabel = tk.Entry(self.frame, textvariable=self.info, state='readonly', width=width)
         self.info.set(INFO_PRESET_MESSAGE)
-        self.infoLabel.place(x=0, y=WINDOW_SIZE[1]-18)
+        self.infoLabel.place(x=0, y=height-18)
         print("\tinfoLabel created successfully.")
 
         # Set method for when user clicks the window's 'x' button
@@ -292,12 +384,15 @@ class MotorControlApp(tk.Frame):
         self.commandMenu["menu"].delete(0, "end")
 
         # For each command, add an entry to the menu
-        for command in self.getCommandsOfType(self.selectedCommandType.get(), namesOnly=True):
-            self.commandMenu["menu"].add_command(label=command, command=lambda value=command: self.selectedCommand.set(value))
-            print("\t\t%s command loaded successfully." % command)
+        for command in self.getCommandsOfType(self.selectedCommandType.get()):
+            self.commandMenu["menu"].add_command(label=command.getName(), command=lambda value=command: self.commandClicked(value))
+            print("\t\t%s command loaded successfully." % command.getName())
+
+        self.sortCommands(self.getCommandType(self.selectedCommandType.get()))
 
         # Set selected command to first in the menu
         self.selectedCommand.set(self.commandMenu["menu"].entrycget(0, "label"))
+        self.commandClicked(self.getCurrentCommand())
 
     # Get the currently selected command
     def getCurrentCommand(self):
@@ -338,6 +433,21 @@ class MotorControlApp(tk.Frame):
 
         print("\tgetCommandType(%s) returned nothing." % ctype)
 
+    # Callback to run when a command is selected
+    def commandClicked(self, command=None):
+        if command:
+            # Set selected command
+            self.selectedCommand.set(command.getName())
+
+            # Remove previous command frame
+            self.selectedFrame.place_forget()
+
+            # Set the currently selected command frame
+            self.selectedFrame = command.getFrame()
+
+            # Place the command frame
+            self.selectedFrame.place(x=FRAME_POSITION[0], y=FRAME_POSITION[1], width=FRAME_SIZE[0], height=FRAME_SIZE[1])
+
     # Edit the selected command
     def editCommand(self, command):
         if command is not None:
@@ -346,10 +456,58 @@ class MotorControlApp(tk.Frame):
         else:
             self.info.set("Invalid command selected.")
 
+    # Save the selected command with current variables
+    def saveCommand(self, command):
+        # Iterate through each variable
+        for variable in command.getVariables():
+            # Assert that entered values are within possible values of variable
+            try:
+                assert(int(variable.getEntryValue()) >= variable.getLow())
+                assert(int(variable.getEntryValue()) <= variable.getHigh())
+            except AssertionError:
+                messagebox.showerror('Invalid Variable Value', "You have entered an invalid value for the variable '%s'" % variable.getSymbol())
+                print("Error: Invalid value for variable '%s'" % variable.getSymbol())
+                return
+
+        # Delete the current command
+        self.deleteCommand(command, prompt=False)
+
+        # Set variable values for command
+        for variable in command.getVariables():
+            variable.setCurrentValue()
+
+        # Add command to commands array in command type
+        self.getCommandType(self.selectedCommandType.get()).getCommands().append(command)
+
+        # Initialize variables, possibles amd values arrays
+        variables = []
+        possibles = []
+        values = []
+
+        # If the command has variables, populate the arrays
+        if command.getVariables():
+            for v in command.getVariables():
+                variables.append(v.getSymbol())
+                possibles.append(str(v.getLow()) + "-" + str(v.getHigh()))
+                values.append(str(v.getCurrentValue()))
+
+        # Append the new command to the command type file
+        file = open(self.getCommandType(self.selectedCommandType.get()).getPath(), 'a')
+        file.write("%s,%s,%s,%s,%s,%s\n" % (command.getName(), command.getCommandRaw(), "".join(variables), " ".join(possibles), " ".join(values), command.getDescription().replace('\n', '')))
+        file.close()
+
+        self.sortCommands(self.getCommandType(self.selectedCommandType.get()))
+
+        print("\tCommand '%s' was saved successfully." % command.getName())
+
     # Delete the specified command
-    def deleteCommand(self, command):
-        # Display messagebox to alert user of deletion
-        if messagebox.askyesno('Delete Command?', "Are you sure you would like to delete the command '%s'?\nThis will be permanent." % command.getName()):
+    def deleteCommand(self, command=None, prompt=True):
+        result = False
+        if command and prompt:
+            # Display messagebox to alert user of deletion
+            result = messagebox.askyesno('Delete Command?', "Are you sure you would like to delete the command '%s'?\nThis will be permanent." % command.getName())
+
+        if (command and not prompt) or (prompt and result):
             # Get indexes of type and command
             typeIndex, comIndex = self.getCommandIndex(command)
 
@@ -529,7 +687,7 @@ class MotorControlApp(tk.Frame):
                         c += 1
 
                 # Append the command to the command array in the command type
-                self.getCommandType(name).getCommands().append(Command(name=split[0], command=split[1], variables=variables, description=split[5]))
+                self.getCommandType(name).getCommands().append(Command(name=split[0], command=split[1], variables=variables, description=split[5], frame=tk.Frame(self.frame)))
                 print("\t\t%s command loaded successfully." % self.getCommandType(name).getCommands()[-1].getName())
 
             print("\t%s commands loaded successfully." % name)
@@ -572,7 +730,7 @@ class MotorControlApp(tk.Frame):
                         values.append(str(v.getCurrentValue()))
 
                 # Write the command to the type file
-                f.write("%s,%s,%s,%s,%s,%s\n" % (command.getName(), command.getCommand(), "".join(variables), " ".join(possibles), " ".join(values), command.getDescription().replace('\n', '')))
+                f.write("%s,%s,%s,%s,%s,%s\n" % (command.getName(), command.getCommandRaw(), "".join(variables), " ".join(possibles), " ".join(values), command.getDescription().replace('\n', '')))
                 print("\t\t%s saved successfully." % command.getName())
 
             print("\tCommand type '%s' saved as '%s' successfully." % (self.selectedCommandType.get(), f.name))

@@ -56,21 +56,44 @@ class Command():
     def setDescription(self, d):
         self.description = d
 
+    # Set command frame
+    def setFrame(self, f):
+        self.frame = f
+
     # Set get command name
     def getName(self):
         return self.name
 
-    # Get command command
-    def getCommand(self):
+    # Get the raw command text
+    def getCommandRaw(self):
         return self.command
+
+    # Get the compiled command
+    def getCommand(self):
+        ret = "" + self.command
+
+        for v in self.variables:
+            if v.getEntryValue():
+                ret = ret.replace(v.getSymbol(), v.getEntryValue())
+            else:
+                 ret = ret.replace(v.getSymbol(), v.getCurrentValue())
+
+        return ret
 
     # Get command variables
     def getVariables(self):
         return self.variables
 
-    # Get command variable by index
+    # Get command variable by index or name
     def getVariable(self, index=0):
-        return self.variables[index]
+        if isinstance(index, int):
+            return self.variables[index]
+        elif isinstance(index, str):
+            for v in self.variables:
+                if v.symbol == index:
+                    return v
+        else:
+            print("\nGet variable failed, index=%s is invalid.\n" % index)
 
     # Get number of variables
     def numVariables(self):
@@ -79,3 +102,7 @@ class Command():
     # Get command description
     def getDescription(self):
         return self.description
+
+    # Get command frame
+    def getFrame(self):
+        return self.frame

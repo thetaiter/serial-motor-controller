@@ -93,7 +93,7 @@ class ShowInfoApp(tk.Frame):
                     possibles.append(str(v.getLow()) + " - " + str(v.getHigh()))
                     currents.append(str(v.getCurrentValue()))
 
-            ret.append("Name: %s\nCommand: %s\nVariables: %s\nPossible Values: %s\nCurrent Values: %s\nDescription: %s\n\n" % (command.getName(), command.getCommand(), ', '.join(variables), ', '.join(possibles), ', '.join(currents), command.getDescription()))
+            ret.append("Name: %s\nCommand: %s\nVariables: %s\nPossible Values: %s\nCurrent Values: %s\nDescription: %s\n\n" % (command.getName(), command.getCommandRaw(), ', '.join(variables), ', '.join(possibles), ', '.join(currents), command.getDescription()))
 
         # Return formatted commands
         return ret

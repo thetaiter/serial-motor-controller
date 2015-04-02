@@ -1,6 +1,6 @@
 class Variable():
     # Constructor
-    def __init__(self, symbol='x', low=0, high=10, currentValue=5, mid=5):
+    def __init__(self, symbol='x', low=0, high=10, currentValue=5, entry=None):
         # Set symbol
         self.symbol = symbol
 
@@ -24,6 +24,12 @@ class Variable():
             print("Error: Variable value error, currentValue should be between low and high (inclusive).")
             self.currentValue = low
 
+        self.entry = entry
+
+        if self.entry:
+            self.entry.delete(0, 'end')
+            self.entry.insert(0, self.currentValue)
+
     # Set variable symbol
     def setSymbol(self, sym):
         self.symbol = sym
@@ -37,7 +43,10 @@ class Variable():
         self.high = h
 
     # Set variable current value
-    def setCurrentValue(self, c):
+    def setCurrentValue(self, c=None):
+        if c is None:
+            c = int(self.entry.get())
+
         try:
             assert(c >= self.low)
             assert(c <= self.high)
@@ -46,6 +55,15 @@ class Variable():
             return
 
         self.currentValue = c
+
+    # Set variable entry
+    def setEntry(self, e):
+        self.entry = e
+
+    # Set variable entry value
+    def setEntryValue(self, val):
+        self.entry.delete(0, 'end')
+        self.entry.insert(0, val)
 
     # Get variable symbol
     def getSymbol(self):
@@ -66,3 +84,15 @@ class Variable():
     # Get variable current value
     def getCurrentValue(self):
         return self.currentValue
+
+    # Get the variable entry
+    def getEntry(self):
+        if self.entry:
+            return self.entry
+
+    # Get the variable's entry value
+    def getEntryValue(self):
+        if self.entry:
+            return self.entry.get()
+
+    #

@@ -159,7 +159,7 @@ class CreateCommandApp(tk.Frame):
 
             # Populate the entry boxes
             self.nameEntry.insert(0, self.command.getName())
-            self.commandEntry.insert(0, self.command.getCommand())
+            self.commandEntry.insert(0, self.command.getCommandRaw())
             self.variablesEntry.insert(0, "".join(vars))
             self.possibleEntry.insert(0, " ".join(possibles))
             self.valuesEntry.insert(0, " ".join(currents))
@@ -274,7 +274,7 @@ class CreateCommandApp(tk.Frame):
 
             # Open command type file and add new command
             with open(path, 'a') as file:
-                file.write("%s,%s,%s,%s,%s,%s\n" % (self.command.getName(), self.command.getCommand(), self.variablesEntry.get(), self.possibleEntry.get(), self.valuesEntry.get(), self.command.getDescription()))
+                file.write("%s,%s,%s,%s,%s,%s\n" % (self.command.getName(), self.command.getCommandRaw(), self.variablesEntry.get(), self.possibleEntry.get(), self.valuesEntry.get(), self.command.getDescription()))
                 file.close()
 
             # Set saved to true
@@ -484,7 +484,7 @@ class CreateCommandApp(tk.Frame):
             self.saved = False
             return True
 
-        if self.command.getCommand() != self.commandEntry.get():
+        if self.command.getCommandRaw() != self.commandEntry.get():
             self.saved = False
             return True
 
