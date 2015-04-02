@@ -64,9 +64,21 @@ class Command():
     def getName(self):
         return self.name
 
-    # Get command command
-    def getCommand(self):
+    # Get the raw command text
+    def getCommandRaw(self):
         return self.command
+
+    # Get the compiled command
+    def getCommand(self):
+        ret = "" + self.command
+
+        for v in self.variables:
+            if v.getEntryValue():
+                ret = ret.replace(v.getSymbol(), v.getEntryValue())
+            else:
+                 ret = ret.replace(v.getSymbol(), v.getCurrentValue())
+
+        return ret
 
     # Get command variables
     def getVariables(self):
