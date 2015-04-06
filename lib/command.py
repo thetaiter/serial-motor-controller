@@ -6,20 +6,19 @@ class Command():
         self.command = command
 
         # Assert that variables is a list
-        if variables:
-            try:
-                assert(isinstance(variables, list))
-            except AssertionError:
-                print("Error: Variables attribute of Command must be a list.")
-                return
+        try:
+            assert(isinstance(variables, list))
+        except AssertionError:
+            print("Error: Variables attribute of Command must be a list.")
+            return
 
-            # Assert that variables match characters in command string
-            try:
-                for v in variables:
-                    assert(self.command.__contains__(v.symbol))
-            except AssertionError:
-                print("Error: Variables entered must have symbols that match characters in the command string.")
-                return
+        # Assert that variables match characters in command string
+        try:
+            for v in variables:
+                assert(self.command.__contains__(v.symbol))
+        except AssertionError:
+            print("Error: Variables entered must have symbols that match characters in the command string.")
+            return
 
         # Set variables, description and frame
         self.variables = variables
