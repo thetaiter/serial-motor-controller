@@ -194,6 +194,9 @@ class MotorControlApp(tk.Frame):
 
     # Setup specified command frame
     def createCommandFrame(self, command):
+        if not command.getFrame():
+            command.setFrame(tk.Frame(self.frame))
+
         # Create and place variables label
         variablesLabel = tk.Label(command.getFrame(), text="Variables", relief=tk.GROOVE)
         variablesLabel.place(x=2, y=2, width=280)
@@ -441,6 +444,10 @@ class MotorControlApp(tk.Frame):
 
             # Remove previous command frame
             self.selectedFrame.place_forget()
+
+            if not command.getFrame():
+                # Create a command frame
+                self.createCommandFrame(command)
 
             # Set the currently selected command frame
             self.selectedFrame = command.getFrame()
