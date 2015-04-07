@@ -27,7 +27,7 @@ ENTER_COMMAND_MESSAGE = 'Enter a custom command here'
 INFO_PRESET_MESSAGE = 'Info will be printed here'
 AVAILABLE_BAUDS = ["9600", "19200", "38400"]
 FRAME_POSITION = [0, 103]
-FRAME_SIZE = [WINDOW_SIZE[0]-117, WINDOW_SIZE[1]-64]
+FRAME_SIZE = [WINDOW_SIZE[0]-117, WINDOW_SIZE[1]-121]
 
 # Main app class with all major app functions
 class MotorControlApp(tk.Frame):
@@ -212,7 +212,7 @@ class MotorControlApp(tk.Frame):
 
             # Create and place an entry for the value of the variable
             variable.setEntry(tk.Entry(command.getFrame()))
-            variable.getEntry().place(x=30, y=yPosition, width=65)
+            variable.getEntry().place(x=30, y=yPosition+1, width=65)
 
             # Set variable value to current value
             variable.setEntryValue(variable.getCurrentValue())
@@ -694,7 +694,10 @@ class MotorControlApp(tk.Frame):
                         c += 1
 
                 # Append the command to the command array in the command type
-                self.getCommandType(name).getCommands().append(Command(name=split[0], command=split[1], variables=variables, description=split[5], frame=tk.Frame(self.frame)))
+                self.getCommandType(name).getCommands().append(Command(name=split[0], command=split[1], variables=variables, description=split[5]))
+                self.createCommandFrame(self.getCommandType(name).getCommands()[-1])
+                self.sortCommandTypes()
+
                 print("\t\t%s command loaded successfully." % self.getCommandType(name).getCommands()[-1].getName())
 
             print("\t%s commands loaded successfully." % name)
