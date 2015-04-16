@@ -73,11 +73,12 @@ class Command():
     def getCommand(self):
         ret = "" + self.command
 
-        for v in self.variables:
-            if v.getEntryValue():
-                ret = ret.replace(v.getSymbol(), v.getEntryValue())
-            else:
-                 ret = ret.replace(v.getSymbol(), v.getCurrentValue())
+        if self.variables:
+            for v in self.variables:
+                if v.getEntryValue():
+                    ret = ret.replace(v.getSymbol(), v.getEntryValue())
+                else:
+                     ret = ret.replace(v.getSymbol(), str(v.getCurrentValue()))
 
         return ret
 

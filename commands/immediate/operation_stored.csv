@@ -14,5 +14,5 @@ res,res,,,,Software reset control.
 del,del,,,,Delete last command.
 [i1, i2...],[i1, i2...],,,,Send data to Slave through Master (two VXM controllers connected by VXM bus).
 setD0,setD0,,,,Set VXM back to factory defaults (All programs, settings, motor selections will be erased).
-PMx,PMx,x,1-4,1,Select Program number x, x = 0 to 4.
-PM-x,PM-x,x,1-4,1,Select and clear all commands from Program number x, x = 0 to 4.
+PMx,PMx,x,0-3,0,Select Program number x, x = 0 to 3.
+PM-x,PM-x,x,0-3,0,Select and clear all commands from Program number x, x = 0 to 3.

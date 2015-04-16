@@ -3,6 +3,7 @@ import sys
 import os
 import glob
 import shutil
+import re
 
 # Import local libraries
 from lib import create_command, show_info, rename_type, command_type, command, variable
@@ -39,7 +40,7 @@ class MotorControlApp(tk.Frame):
         tk.Frame.__init__(self, master)
 
         self.setup = False
-        self.program = ''
+        self.programs = {}
 
         # Create master frame
         self.frame = tk.Frame(self.master)
@@ -614,7 +615,7 @@ class MotorControlApp(tk.Frame):
     # Create the file menu for menu bar
     def createFileMenu(self):
         self.fileMenu = tk.Menu(self.menuBar, tearoff=0)
-        self.fileMenu.add_command(label="New Command...", command= self.createCommand)
+        self.fileMenu.add_command(label="New Command...", command=self.createCommand)
         self.fileMenu.add_command(label="Load Program...", command=self.loadProgram)
         self.fileMenu.add_command(label="Load Command Type...", command=self.loadCommandType)
         self.fileMenu.add_command(label="Save Command Type...", command=lambda:self.saveCommandType(As=False))
@@ -704,13 +705,87 @@ class MotorControlApp(tk.Frame):
 
     # Load a program from a file
     def loadProgram(self):
-        # TODO
+        # Prompt the user for a file to load
         f = filedialog.askopenfile('r', defaultextension='.txt')
 
+        # If the file exists, load it
         if f:
-            self.program = f.readlines()
-
+            # Read the lines of the file and close it
+            program = f.readlines()
             f.close()
+
+            # If there were lines in the file, check the program number and proceed
+            if program:
+                # Regular expression to check program format
+                regex = re.compile('program [0-3]$')
+
+                # If file does not start in specified way, alert the user and return
+                if regex.match(program[0].lower().replace('\n','').replace('\r', '')) is None:
+                    print("Program Error line #1: Program must begin with a line that reads 'Program #'\n")
+                    messagebox.showerror("Syntax Error", "Your program must begin with a line that tells it which program number to load this program into.  The first line on the program should read 'Program #' where '#' is replaced with 1, 2, 3, or 4.")
+                    return
+
+                # Get the program number
+                programNumber = program[0].split()[1]
+
+                # Pop the first line off the program
+                program.pop(0)
+
+                # Add to global programs
+                self.programs[programNumber] = []
+
+                # Append program selection command to program
+                self.programs[programNumber].append("PM-" + programNumber)
+
+                # Iterate through commands in program
+                for command in program:
+                    # Remove extra line breaks
+                    command = command.replace('\n', '')
+
+                    # If command is not an empty line
+                    if command != '':
+                        # If command is not program selection
+                        if regex.match(command.lower()) is None:
+                            # If command is the name of a loaded command
+                            if self.getCommand(command):
+                                # Append the compiled command to the global program variable
+                                self.programs[programNumber].append(self.getCommand(command).getCommand())
+                            else:
+                                # Append the exact text to the global program variable
+                                self.programs[programNumber].append(command)
+                        else:
+                            # Set the new program number
+                            programNumber = command.split()[1]
+
+                            # Append the new program selection to the global program variable
+                            self.programs[programNumber] = []
+                            self.programs[programNumber].append("PM-" + programNumber)
+
+                # Iterate programs and send commands to VXM
+                for i in range(0, 4):
+                    if str(i) in self.programs:
+                        for command in self.programs[str(i)]:
+                            self.sendCommand(Command(command=command))
+
+                # Send command for program selection from inputs 2, 3
+                self.sendCommand(Command(command="setI67"))
+
+                # Send command to save programs/settings
+                self.sendCommand(Command(command="rsm"))
+
+            else:
+                print("Error: Program file is empty\n")
+                messagebox.showerror("Empty Program", "Error: The program file you selected is empty. Please choose a valid program file.")
+                return
+
+    # Get a command by name
+    def getCommand(self, name):
+        for ctype in self.COMMANDS:
+            for c in ctype.getCommands():
+                if c.getName() == name:
+                    return c
+
+        return None
 
     # Show the save command type as dialog
     def saveCommandType(self, As=True):
