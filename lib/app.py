@@ -6,7 +6,7 @@ import shutil
 import re
 
 # Import local libraries
-from lib import create_command, show_info, rename_type, command_type, command, variable
+from lib import create_command, show_info, rename_type, command_type, command, variable, program
 
 CreateCommandApp = create_command.CreateCommandApp
 ShowInfoApp = show_info.ShowInfoApp
@@ -14,6 +14,7 @@ RenameTypeApp = rename_type.RenameTypeApp
 Command = command.Command
 CommandType = command_type.CommandType
 Variable = variable.Variable
+Program = program.Program
 
 # Import 3rd party libraries
 import tkinter as tk
@@ -40,7 +41,6 @@ class MotorControlApp(tk.Frame):
         tk.Frame.__init__(self, master)
 
         self.setup = False
-        self.programs = {}
 
         # Create master frame
         self.frame = tk.Frame(self.master)
@@ -57,6 +57,17 @@ class MotorControlApp(tk.Frame):
 
         # Call setup menu bar method
         self.setupMenuBar()
+
+        # Set up programs
+        print("\tSetting up programs...")
+        self.programs = [
+            Program(self, 0),
+            Program(self, 1),
+            Program(self, 2),
+            Program(self, 3),
+            Program(self, 4)
+        ]
+        print("\tPrograms set up successfully.")
 
         print("\nProgram loaded successfully.\n")
 
@@ -348,9 +359,11 @@ class MotorControlApp(tk.Frame):
                 if command == None:
                     ser.write(self.currentCommand.get().encode())
                     self.info.set('Sending "%s" to %s at %s BAUD...' % (self.currentCommand.get(), port, baud))
+                    print("\t\tCommand %s sent to %s at %s BAUD." % (self.currentCommand.get(), port, baud))
                 else:
                     ser.write(command.getCommand().encode())
                     self.info.set('Sending "%s" to %s at %s BAUD...' % (command.getCommand(), port, baud))
+                    print("\t\tCommand %s sent to %s at %s BAUD." % (command.getCommand(), port, baud))
 
                 # Close the serial port
                 ser.close()
@@ -712,67 +725,51 @@ class MotorControlApp(tk.Frame):
         if f:
             # Read the lines of the file and close it
             program = f.readlines()
+            name = f.name.split('/')[-1]
             f.close()
 
             # If there were lines in the file, check the program number and proceed
             if program:
                 # Regular expression to check program format
-                regex = re.compile('program [0-3]$')
+                regex = re.compile('program [0-4]$')
 
-                # If file does not start in specified way, alert the user and return
+                # If file does not start with "Program #", alert the user and return
                 if regex.match(program[0].lower().replace('\n','').replace('\r', '')) is None:
                     print("Program Error line #1: Program must begin with a line that reads 'Program #'\n")
-                    messagebox.showerror("Syntax Error", "Your program must begin with a line that tells it which program number to load this program into.  The first line on the program should read 'Program #' where '#' is replaced with 1, 2, 3, or 4.")
+                    messagebox.showerror("Syntax Error", "Your program must begin with a line that tells it which program number to load this program into.  The first line on the program should read 'Program #' where '#' is replaced with 0, 1, 2, 3, or 4.")
                     return
 
-                # Get the program number
-                programNumber = program[0].split()[1]
+                print("\tLoading program...")
 
-                # Pop the first line off the program
-                program.pop(0)
+                # Initialize program number
+                progNum = 0
 
-                # Add to global programs
-                self.programs[programNumber] = []
-
-                # Append program selection command to program
-                self.programs[programNumber].append("PM-" + programNumber)
-
-                # Iterate through commands in program
+                # Iterate through commands
                 for command in program:
-                    # Remove extra line breaks
-                    command = command.replace('\n', '')
+                    # Remove new line characters
+                    command = command.replace('\n', '').replace('\r', '')
 
-                    # If command is not an empty line
+                    # If the command is not empty
                     if command != '':
-                        # If command is not program selection
+                        # If command is not a new program selection command, add it to the command list
                         if regex.match(command.lower()) is None:
-                            # If command is the name of a loaded command
-                            if self.getCommand(command):
-                                # Append the compiled command to the global program variable
-                                self.programs[programNumber].append(self.getCommand(command).getCommand())
-                            else:
-                                # Append the exact text to the global program variable
-                                self.programs[programNumber].append(command)
+                            self.programs[progNum].addCommand(command)
+                        # Else set up new program
                         else:
-                            # Set the new program number
-                            programNumber = command.split()[1]
+                            # Compile the program
+                            self.programs[progNum].compile()
 
-                            # Append the new program selection to the global program variable
-                            self.programs[programNumber] = []
-                            self.programs[programNumber].append("PM-" + programNumber)
+                            # Get the program number
+                            progNum = int(command.split()[1])
 
-                # Iterate programs and send commands to VXM
-                for i in range(0, 4):
-                    if str(i) in self.programs:
-                        for command in self.programs[str(i)]:
-                            self.sendCommand(Command(command=command))
+                            # Clear previous program data
+                            self.programs[progNum].clear()
 
-                # Send command for program selection from inputs 2, 3
-                self.sendCommand(Command(command="setI67"))
+                # Compile the program
+                self.programs[progNum].compile()
 
-                # Send command to save programs/settings
-                self.sendCommand(Command(command="rsm"))
-
+                print("\tProgram loaded %s successfully." % name)
+                self.info.set("Program %s loaded successfully." % name)
             else:
                 print("Error: Program file is empty\n")
                 messagebox.showerror("Empty Program", "Error: The program file you selected is empty. Please choose a valid program file.")
@@ -784,7 +781,6 @@ class MotorControlApp(tk.Frame):
             for c in ctype.getCommands():
                 if c.getName() == name:
                     return c
-
         return None
 
     # Show the save command type as dialog
