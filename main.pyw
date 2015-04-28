@@ -1,5 +1,5 @@
 # Import local libraries
-import lib.app as app
+from lib import app
 
 # Import 3rd party libraries
 import tkinter as tk

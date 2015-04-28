@@ -34,8 +34,11 @@ FRAME_SIZE = [WINDOW_SIZE[0]-117, WINDOW_SIZE[1]-121]
 # Main app class with all major app functions
 class MotorControlApp(tk.Frame):
     # Constructor initialization function
-    def __init__(self, master):
-        print("\nInitializing Tkinter frame...")
+    def __init__(self, master, log=True):
+        self.log = log
+
+        if self.log:
+            print("\nInitializing Tkinter frame...")
 
         # Initialize the TK frame
         tk.Frame.__init__(self, master)
@@ -45,13 +48,14 @@ class MotorControlApp(tk.Frame):
         # Create master frame
         self.frame = tk.Frame(self.master)
         self.frame.place(x=0, y=0, width=WINDOW_SIZE[0], height=WINDOW_SIZE[1])
-        print("\tFrame created successfully.")
+        if self.log:
+            print("\tFrame created successfully.")
 
         self.selectedFrame = tk.Frame(self.frame)
 
         # Load commands into the program
         self.loadCommands()
-        
+
         # Call setup window method passing in splatted window specs
         self.setupWindow(WINDOW_SIZE[0], WINDOW_SIZE[1], *self.calculateWindowOffset())
 
@@ -59,7 +63,8 @@ class MotorControlApp(tk.Frame):
         self.setupMenuBar()
 
         # Set up programs
-        print("\tSetting up programs...")
+        if self.log:
+            print("\tSetting up programs...")
         self.programs = [
             Program(self, 0),
             Program(self, 1),
@@ -67,13 +72,14 @@ class MotorControlApp(tk.Frame):
             Program(self, 3),
             Program(self, 4)
         ]
-        print("\tPrograms set up successfully.")
-
-        print("\nProgram loaded successfully.\n")
+        if self.log:
+            print("\tPrograms set up successfully.")
+            print("\nProgram loaded successfully.\n")
 
     # Load the commands from files into the global self.COMMANDS array
     def loadCommands(self):
-        print("Loading commands...")
+        if self.log:
+            print("Loading commands...")
 
         # Clear current commands
         self.clearCommands()
@@ -95,7 +101,8 @@ class MotorControlApp(tk.Frame):
                 path = tokens[1].replace('->', os.sep).replace('\n', '')
             self.COMMANDS.append(CommandType(name=tokens[0], path=path, commands=[]))
 
-            print("\tLoading %s commands..." % self.COMMANDS[count].name)
+            if self.log:
+                print("\tLoading %s commands..." % self.COMMANDS[count].name)
 
             # Open current command type's commands path and iterate through all lines
             if os.path.isfile(self.COMMANDS[count].path):
@@ -151,12 +158,14 @@ class MotorControlApp(tk.Frame):
                     # Set up the command frame
                     self.createCommandFrame(self.COMMANDS[count].getCommands()[-1])
 
-                    print("\t\t%s command loaded successfully." % self.COMMANDS[count].getCommands()[-1].getName())
+                    if self.log:
+                        print("\t\t%s command loaded successfully." % self.COMMANDS[count].getCommands()[-1].getName())
 
                 # Close the file
                 file.close()
 
-                print("\t%s commands were loaded successfully." % self.COMMANDS[count].getName())
+                if self.log:
+                    print("\t%s commands were loaded successfully." % self.COMMANDS[count].getName())
 
                 # Increment the line counter
                 count += 1
@@ -179,7 +188,8 @@ class MotorControlApp(tk.Frame):
     # Clear the global commands array
     def clearCommands(self):
         self.COMMANDS = []
-        print("\tCommands cleared successfully.")
+        if self.log:
+            print("\tCommands cleared successfully.")
 
     # Sort command types
     def sortCommandTypes(self):
@@ -241,7 +251,8 @@ class MotorControlApp(tk.Frame):
 
     # Set up the tkinter window
     def setupWindow(self, width, height, xoffset, yoffset):
-        print("Settings up window w=%s, h=%s, xoffset=%s, yoffset=%s..."% (width, height, xoffset, yoffset))
+        if self.log:
+            print("Settings up window w=%s, h=%s, xoffset=%s, yoffset=%s..."% (width, height, xoffset, yoffset))
 
         # Set window to not be resizable and set the title
         self.master.geometry("%dx%d%+d%+d" % (width, height, xoffset, yoffset))
@@ -253,12 +264,14 @@ class MotorControlApp(tk.Frame):
         self.commandEntry = tk.Entry(self.frame, textvariable=self.currentCommand)
         self.currentCommand.set(ENTER_COMMAND_MESSAGE)
         self.commandEntry.place(x=0, y=0, width=width)
-        print("\tcommandEntry created successfully.")
+        if self.log:
+            print("\tcommandEntry created successfully.")
 
         # Create send button
         self.sendButton = tk.Button(self.frame, text='Send Custom Command', command=self.sendCommand)
         self.sendButton.place(x=0, y=18, width=width)
-        print("\tsendButton created successfully.")
+        if self.log:
+            print("\tsendButton created successfully.")
 
         # Create Divider labels
         self.dividerLabel1 = tk.Label(self.frame, bg='black')
@@ -282,7 +295,8 @@ class MotorControlApp(tk.Frame):
         self.commandTypeMenu['menu'].config(postcommand=lambda: self.populateCommandTypeMenu())
         self.populateCommandTypeMenu()
         self.commandTypeMenu.place(x=2, y=70, width=155)
-        print("\tcommandTypeMenu created successfully.")
+        if self.log:
+            print("\tcommandTypeMenu created successfully.")
 
         # Create Option Menu for commands
         self.selectedCommand = tk.StringVar(self.frame)
@@ -291,53 +305,63 @@ class MotorControlApp(tk.Frame):
         self.selectedCommand.set(self.commandMenu["menu"].entrycget(0, "label"))
         self.populateCommandMenu()
         self.commandMenu.place(x=158, y=70, width=124)
-        print("\tcommandMenu created successfully.")
+        if self.log:
+            print("\tcommandMenu created successfully.")
 
         # Create Button to send command
         self.sendCommandButton = tk.Button(self.frame, text='Send Command', command=lambda: self.sendCommand(self.getCurrentCommand()))
         self.sendCommandButton.place(x=287, y=72, width=width-289, height=27)
-        print("\tsendCommandButton created successfully.")
+        if self.log:
+            print("\tsendCommandButton created successfully.")
 
         # Create Button to edit the current command
         self.editCommandButton = tk.Button(self.frame, text='Edit Command', command=lambda: self.editCommand(self.getCurrentCommand()))
         self.editCommandButton.place(x=287, y=102, width=width-289, height=27)
-        print("\teditCommandButton created successfully")
+        if self.log:
+            print("\teditCommandButton created successfully")
 
         # Create the save button for current command
         self.saveButton = tk.Button(self.frame, text='Save Command', command=lambda: self.saveCommand(self.getCurrentCommand()))
         self.saveButton.place(x=287, y=132, width=width-289, height=27)
-        print("\tsaveButton created successfully.")
+        if self.log:
+            print("\tsaveButton created successfully.")
 
         # Create Button to delete the current command
         self.deleteCommandButton = tk.Button(self.frame, text='Delete Command', command=lambda: self.deleteCommand(self.getCurrentCommand()))
         self.deleteCommandButton.place(x=287, y=162, width=width-289, height=27)
-        print("\tdeleteCommandButton created successfully")
+        if self.log:
+            print("\tdeleteCommandButton created successfully")
 
         # Create Button to delete the current command
         self.renameTypeButton = tk.Button(self.frame, text='Rename Type', command=lambda: self.renameCommandType())
         self.renameTypeButton.place(x=287, y=192, width=width-289, height=27)
-        print("\trenameTypeButton created successfully")
+        if self.log:
+            print("\trenameTypeButton created successfully")
 
         # Create Button to delete the current type
         self.deleteTypeButton = tk.Button(self.frame, text='Delete Type', command=lambda: self.deleteCommandType())
         self.deleteTypeButton.place(x=287, y=222, width=width-289, height=27)
-        print("\tdeleteTypeButton created successfully.")
+        if self.log:
+            print("\tdeleteTypeButton created successfully.")
 
         # Create load program button
         self.loadProgramButton = tk.Button(self.frame, text='Load Program', command=lambda: self.loadProgram())
         self.loadProgramButton.place(x=287, y=252, width=width-289, height=27)
-        print("\tloadProgramButton created successfully.")
+        if self.log:
+            print("\tloadProgramButton created successfully.")
 
         # Create Info entry box
         self.info = tk.StringVar(self.frame)
         self.infoLabel = tk.Entry(self.frame, textvariable=self.info, state='readonly', width=width)
         self.info.set(INFO_PRESET_MESSAGE)
         self.infoLabel.place(x=0, y=height-18)
-        print("\tinfoLabel created successfully.")
+        if self.log:
+            print("\tinfoLabel created successfully.")
 
         # Set method for when user clicks the window's 'x' button
         self.master.protocol("WM_DELETE_WINDOW", self.quitApp)
-        print("\tX-button action set to quitApp successfully")
+        if self.log:
+            print("\tX-button action set to quitApp successfully")
 
         self.setup = True
 
@@ -359,11 +383,13 @@ class MotorControlApp(tk.Frame):
                 if command == None:
                     ser.write(self.currentCommand.get().encode())
                     self.info.set('Sending "%s" to %s at %s BAUD...' % (self.currentCommand.get(), port, baud))
-                    print("\t\tCommand %s sent to %s at %s BAUD." % (self.currentCommand.get(), port, baud))
+                    if self.log:
+                        print("\t\tCommand %s sent to %s at %s BAUD." % (self.currentCommand.get(), port, baud))
                 else:
                     ser.write(command.getCommand().encode())
                     self.info.set('Sending "%s" to %s at %s BAUD...' % (command.getCommand(), port, baud))
-                    print("\t\tCommand %s sent to %s at %s BAUD." % (command.getCommand(), port, baud))
+                    if self.log:
+                        print("\t\tCommand %s sent to %s at %s BAUD." % (command.getCommand(), port, baud))
 
                 # Close the serial port
                 ser.close()
@@ -374,7 +400,8 @@ class MotorControlApp(tk.Frame):
 
     # Populate the Command Type menu
     def populateCommandTypeMenu(self):
-        print("\tPopulating commandTypeMenu...")
+        if self.log:
+            print("\tPopulating commandTypeMenu...")
 
         # Delete current menu entries
         self.commandTypeMenu['menu'].delete(0, 'end')
@@ -382,7 +409,8 @@ class MotorControlApp(tk.Frame):
         # For each command type, add an entry to the menu
         for type in self.COMMANDS:
             self.commandTypeMenu['menu'].add_command(label=type.getName(), command=lambda value=type.getName():self.setTypeAndPopulateCommandsMenu(value))
-            print("\t\t%s command type loaded successfully." % type.getName())
+            if self.log:
+                print("\t\t%s command type loaded successfully." % type.getName())
 
         # If there is not a selected command type, set selected command type to first in the menu
         if not self.selectedCommandType.get():
@@ -395,7 +423,8 @@ class MotorControlApp(tk.Frame):
 
     # Populate the commands menu to display commands of selected type
     def populateCommandMenu(self):
-        print("\tPopulating commandMenu with %s commands..." % self.selectedCommandType.get())
+        if self.log:
+            print("\tPopulating commandMenu with %s commands..." % self.selectedCommandType.get())
 
         # Delete current menu entries
         self.commandMenu["menu"].delete(0, "end")
@@ -403,7 +432,8 @@ class MotorControlApp(tk.Frame):
         # For each command, add an entry to the menu
         for command in self.getCommandsOfType(self.selectedCommandType.get()):
             self.commandMenu["menu"].add_command(label=command.getName(), command=lambda value=command: self.commandClicked(value))
-            print("\t\t%s command loaded successfully." % command.getName())
+            if self.log:
+                print("\t\t%s command loaded successfully." % command.getName())
 
         self.sortCommands(self.getCommandType(self.selectedCommandType.get()))
 
@@ -448,7 +478,8 @@ class MotorControlApp(tk.Frame):
             # Increment counter
             count += 1
 
-        print("\tgetCommandType(%s) returned nothing." % ctype)
+        if self.log:
+            print("\tgetCommandType(%s) returned nothing." % ctype)
 
     # Callback to run when a command is selected
     def commandClicked(self, command=None):
@@ -487,7 +518,8 @@ class MotorControlApp(tk.Frame):
                 assert(int(variable.getEntryValue()) <= variable.getHigh())
             except AssertionError:
                 messagebox.showerror('Invalid Variable Value', "You have entered an invalid value for the variable '%s'" % variable.getSymbol())
-                print("Error: Invalid value for variable '%s'" % variable.getSymbol())
+                if self.log:
+                    print("Error: Invalid value for variable '%s'" % variable.getSymbol())
                 return
 
         # Delete the current command
@@ -519,7 +551,8 @@ class MotorControlApp(tk.Frame):
 
         self.sortCommands(self.getCommandType(self.selectedCommandType.get()))
 
-        print("\tCommand '%s' was saved successfully." % command.getName())
+        if self.log:
+            print("\tCommand '%s' was saved successfully." % command.getName())
 
     # Delete the specified command
     def deleteCommand(self, command=None, prompt=True):
@@ -550,9 +583,11 @@ class MotorControlApp(tk.Frame):
 
                 self.populateCommandMenu()
 
-                print("\tCommand '%s' was deleted successfully." % command.getName())
+                if self.log:
+                    print("\tCommand '%s' was deleted successfully." % command.getName())
             else:
-                print("\nCommand '%s' was not found." % command.getName())
+                if self.log:
+                    print("\nCommand '%s' was not found." % command.getName())
 
     # Get the index of the command's type in the global self.COMMANDS array and the index of the command within the commands array of that type
     def getCommandIndex(self, command):
@@ -603,7 +638,8 @@ class MotorControlApp(tk.Frame):
 
     # Set up the menu bar for the application
     def setupMenuBar(self):
-        print("Setting up menu bar...")
+        if self.log:
+            print("Setting up menu bar...")
 
         # Create a menu bar
         self.menuBar = tk.Menu(self.master)
@@ -623,7 +659,8 @@ class MotorControlApp(tk.Frame):
         # Add the menu bar to the master window
         self.master.config(menu=self.menuBar)
 
-        print("\tMenu bar configuration completed successfully.")
+        if self.log:
+            print("\tMenu bar configuration completed successfully.")
 
     # Create the file menu for menu bar
     def createFileMenu(self):
@@ -639,7 +676,8 @@ class MotorControlApp(tk.Frame):
         # Add file menu to menu bar
         self.menuBar.add_cascade(label="File", menu=self.fileMenu)
 
-        print("\tFile menu created successfully.")
+        if self.log:
+            print("\tFile menu created successfully.")
 
     # Show the create command window
     def createCommand(self):
@@ -657,7 +695,8 @@ class MotorControlApp(tk.Frame):
             name = f.name.split('/')
             name = name[len(name)-1].replace('.csv', '').replace('_', ' ').title()
 
-            print("\tLoading %s commands..." % name)
+            if self.log:
+                print("\tLoading %s commands..." % name)
 
             # Append new type to global self.COMMANDS array
             self.COMMANDS.append(CommandType(name=name, path=f.name, commands=[]))
@@ -712,9 +751,11 @@ class MotorControlApp(tk.Frame):
                 self.createCommandFrame(self.getCommandType(name).getCommands()[-1])
                 self.sortCommandTypes()
 
-                print("\t\t%s command loaded successfully." % self.getCommandType(name).getCommands()[-1].getName())
+                if self.log:
+                    print("\t\t%s command loaded successfully." % self.getCommandType(name).getCommands()[-1].getName())
 
-            print("\t%s commands loaded successfully." % name)
+            if self.log:
+                print("\t%s commands loaded successfully." % name)
 
     # Load a program from a file
     def loadProgram(self):
@@ -735,11 +776,13 @@ class MotorControlApp(tk.Frame):
 
                 # If file does not start with "Program #", alert the user and return
                 if regex.match(program[0].lower().replace('\n','').replace('\r', '')) is None:
-                    print("Program Error line #1: Program must begin with a line that reads 'Program #'\n")
+                    if self.log:
+                        print("Program Error line #1: Program must begin with a line that reads 'Program #'\n")
                     messagebox.showerror("Syntax Error", "Your program must begin with a line that tells it which program number to load this program into.  The first line on the program should read 'Program #' where '#' is replaced with 0, 1, 2, 3, or 4.")
                     return
 
-                print("\tLoading program...")
+                if self.log:
+                    print("\tLoading program...")
 
                 # Initialize program number
                 progNum = 0
@@ -768,10 +811,12 @@ class MotorControlApp(tk.Frame):
                 # Compile the program
                 self.programs[progNum].compile()
 
-                print("\tProgram loaded %s successfully." % name)
+                if self.log:
+                    print("\tProgram loaded %s successfully." % name)
                 self.info.set("Program %s loaded successfully." % name)
             else:
-                print("Error: Program file is empty\n")
+                if self.log:
+                    print("Error: Program file is empty\n")
                 messagebox.showerror("Empty Program", "Error: The program file you selected is empty. Please choose a valid program file.")
                 return
 
@@ -794,7 +839,8 @@ class MotorControlApp(tk.Frame):
 
         # If file is opened successfully
         if f:
-            print("\tSaving command type '%s'..." % self.selectedCommandType.get())
+            if self.log:
+                print("\tSaving command type '%s'..." % self.selectedCommandType.get())
 
             # Iterate through all commands of the selected type
             for command in self.getCommandsOfType(self.selectedCommandType.get()):
@@ -812,9 +858,11 @@ class MotorControlApp(tk.Frame):
 
                 # Write the command to the type file
                 f.write("%s,%s,%s,%s,%s,%s\n" % (command.getName(), command.getCommandRaw(), "".join(variables), " ".join(possibles), " ".join(values), command.getDescription().replace('\n', '')))
-                print("\t\t%s saved successfully." % command.getName())
+                if self.log:
+                    print("\t\t%s saved successfully." % command.getName())
 
-            print("\tCommand type '%s' saved as '%s' successfully." % (self.selectedCommandType.get(), f.name))
+            if self.log:
+                print("\tCommand type '%s' saved as '%s' successfully." % (self.selectedCommandType.get(), f.name))
 
     # Create the edit menu for menu bar
     def createEditMenu(self):
@@ -898,7 +946,8 @@ class MotorControlApp(tk.Frame):
             self.selectedCommandType.set(self.commandTypeMenu['menu'].entrycget(0, 'label'))
             self.populateCommandMenu()
 
-            print("\tCommand type '%s' has been removed successfully." % ctype)
+            if self.log:
+                print("\tCommand type '%s' has been removed successfully." % ctype)
 
     # Reload the default commands
     def reloadDefaults(self):
@@ -907,10 +956,12 @@ class MotorControlApp(tk.Frame):
 
         # Display messagebox to ask user if they are sure they want to load defaults
         if messagebox.askyesno("Reload Defaults?", text):
-            print("\tReloading default commands...")
+            if self.log:
+                print("\tReloading default commands...")
 
             # Remove existing version of default command types
-            print("\t\tRemoving existing command type files...")
+            if self.log:
+                print("\t\tRemoving existing command type files...")
             if os.path.isdir("commands%simmediate" % os.sep) and os.path.exists("commands%simmediate" % os.sep):
                 shutil.rmtree("commands%simmediate" % os.sep)
             if os.path.isdir("commands%sprogram_stored" % os.sep) and os.path.exists("commands%sprogram_stored" % os.sep):
@@ -919,7 +970,8 @@ class MotorControlApp(tk.Frame):
                 os.remove("commands%sset.csv" % os.sep)
 
             # Copy default files to commands directory
-            print("\t\tCopying default files...")
+            if self.log:
+                print("\t\tCopying default files...")
             shutil.copytree("commands%s_defaults%simmediate" % (os.sep, os.sep), "commands%simmediate" % os.sep)
             shutil.copytree("commands%s_defaults%sprogram_stored" % (os.sep, os.sep), "commands%sprogram_stored" % os.sep)
             shutil.copyfile("commands%s_defaults%sset.csv" % (os.sep, os.sep), "commands%sset.csv" % os.sep)
@@ -972,11 +1024,13 @@ class MotorControlApp(tk.Frame):
         # Add serial menu to menubar
         self.menuBar.add_cascade(label="Serial", menu=self.serialMenu)
 
-        print("\tSerial menu created successfully.")
+        if self.log:
+            print("\tSerial menu created successfully.")
 
     # Populate the ports menu
     def populatePortMenu(self):
-        print("\tPopulating port menu...")
+        if self.log:
+            print("\tPopulating port menu...")
 
         # Delete current menu entries
         self.portMenu.delete(0, 'end')
@@ -992,7 +1046,8 @@ class MotorControlApp(tk.Frame):
         for port in self.availablePorts:
             self.portMenu.add_radiobutton(label=port, variable=self.selectedPort, value=port)
 
-        print("\t\tAvailable ports scanned successfully. -> %s" % ", ".join(self.availablePorts))
+        if self.log:
+            print("\t\tAvailable ports scanned successfully. -> %s" % ", ".join(self.availablePorts))
 
     # Get all currently available com ports
     def getAvailablePorts(self):
@@ -1023,7 +1078,8 @@ class MotorControlApp(tk.Frame):
 
     # Populate the BAUD menu
     def populateBAUDMenu(self):
-        print("\tPopulating BAUD menu...")
+        if self.log:
+            print("\tPopulating BAUD menu...")
 
         # Delete current menu entries
         self.baudMenu.delete(0, 'end')
@@ -1036,7 +1092,8 @@ class MotorControlApp(tk.Frame):
         for baud in AVAILABLE_BAUDS:
             self.baudMenu.add_radiobutton(label=baud, variable=self.selectedBaud, value=baud)
 
-        print("\t\tAvailable BAUDs loaded successfully. -> %s" % ", ".join(AVAILABLE_BAUDS))
+        if self.log:
+            print("\t\tAvailable BAUDs loaded successfully. -> %s" % ", ".join(AVAILABLE_BAUDS))
 
     # Create the help menu and add to menu bar
     def createHelpMenu(self):
@@ -1065,11 +1122,13 @@ class MotorControlApp(tk.Frame):
         # Add help menu to menu bar
         self.menuBar.add_cascade(label="Help", menu=self.helpMenu)
 
-        print("\tHelp menu created successfully.")
+        if self.log:
+            print("\tHelp menu created successfully.")
 
     # Populate the commands help menu
     def populateCommandsHelpMenu(self):
-        print("\tPopulating commandsMenu...")
+        if self.log:
+            print("\tPopulating commandsMenu...")
 
         # Set counter and delete commands from commands menu
         self.commandsMenu.delete(2, 'end')
@@ -1093,7 +1152,8 @@ class MotorControlApp(tk.Frame):
             # Add the current command type to the selected menu
             tempMenu.add_command(label=ctype.getName(), command=lambda value=ctype.getName():self.showCommands(value))
 
-            print("\t\t%s help option loaded successfully." % ctype.getName())
+            if self.log:
+                print("\t\t%s help option loaded successfully." % ctype.getName())
 
     # Display the commands dialog window
     def showCommands(self, ctype):

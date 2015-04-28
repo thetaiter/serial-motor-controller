@@ -94,3 +94,4 @@ class Variable():
     def getEntryValue(self):
         if self.entry:
             return self.entry.get()
+        return None

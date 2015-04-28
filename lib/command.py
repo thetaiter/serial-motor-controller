@@ -88,18 +88,21 @@ class Command():
 
     # Get command variable by index or name
     def getVariable(self, index=0):
-        if isinstance(index, int):
-            return self.variables[index]
-        elif isinstance(index, str):
-            for v in self.variables:
-                if v.symbol == index:
-                    return v
-        else:
-            print("\nGet variable failed, index=%s is invalid.\n" % index)
+        if isinstance(self.variables, list):
+            if isinstance(index, int):
+                return self.variables[index]
+            elif isinstance(index, str):
+                for v in self.variables:
+                    if v.symbol == index:
+                        return v
+        return None
 
     # Get number of variables
     def numVariables(self):
-        return len(self.variables)
+        if isinstance(self.variables, list):
+            return len(self.variables)
+
+        return 0
 
     # Get command description
     def getDescription(self):
