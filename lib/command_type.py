@@ -49,14 +49,17 @@ class CommandType():
 
     # Get command by index
     def getCommand(self, index):
-        return self.commands[index]
-
-    # Get command by name
-    def getCommandByName(self, name):
-        for command in self.commands:
-            if command.name == name:
-                return command
+        if self.commands is not None:
+            if isinstance(index, int):
+                return self.commands[index]
+            elif isinstance(index, str):
+                for command in self.commands:
+                    if command.name == index:
+                        return command
+        return None
 
     # Get number of commands
     def numCommands(self):
-        return len(self.commands)
+        if self.commands:
+            return len(self.commands)
+        return 0
