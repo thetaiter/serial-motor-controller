@@ -44,6 +44,7 @@ class MotorControlApp(tk.Frame):
         tk.Frame.__init__(self, master)
 
         self.setup = False
+        self.running = False
 
         # Create master frame
         self.frame = tk.Frame(self.master)
@@ -315,40 +316,40 @@ class MotorControlApp(tk.Frame):
             print("\tsendCommandButton created successfully.")
 
         # Create Button to edit the current command
-        self.editCommandButton = tk.Button(self.frame, text='Edit Command', command=lambda: self.editCommand(self.getCurrentCommand()))
-        self.editCommandButton.place(x=287, y=102, width=width-289, height=27)
+        self.runProg0Button = tk.Button(self.frame, text='Run Program 0', command=lambda: self.runProgram(0))
+        self.runProg0Button.place(x=287, y=102, width=width-289, height=27)
         if self.log:
-            print("\teditCommandButton created successfully")
+            print("\trunProg0Button created successfully")
 
         # Create the save button for current command
-        self.saveButton = tk.Button(self.frame, text='Save Command', command=lambda: self.saveCommand(self.getCurrentCommand()))
-        self.saveButton.place(x=287, y=132, width=width-289, height=27)
+        self.runProg1Button = tk.Button(self.frame, text='Run Program 1', command=lambda: self.runProgram(1))
+        self.runProg1Button.place(x=287, y=132, width=width-289, height=27)
         if self.log:
-            print("\tsaveButton created successfully.")
+            print("\trunProg1Button created successfully.")
 
         # Create Button to delete the current command
-        self.deleteCommandButton = tk.Button(self.frame, text='Delete Command', command=lambda: self.deleteCommand(self.getCurrentCommand()))
-        self.deleteCommandButton.place(x=287, y=162, width=width-289, height=27)
+        self.runProg2Button = tk.Button(self.frame, text='Run Program 2', command=lambda: self.runProgram(2))
+        self.runProg2Button.place(x=287, y=162, width=width-289, height=27)
         if self.log:
-            print("\tdeleteCommandButton created successfully")
+            print("\trunProg2Button created successfully")
 
         # Create Button to delete the current command
-        self.renameTypeButton = tk.Button(self.frame, text='Rename Type', command=lambda: self.renameCommandType())
-        self.renameTypeButton.place(x=287, y=192, width=width-289, height=27)
+        self.runProg3Button = tk.Button(self.frame, text='Run Program 3', command=lambda: self.runProgram(3))
+        self.runProg3Button.place(x=287, y=192, width=width-289, height=27)
         if self.log:
-            print("\trenameTypeButton created successfully")
+            print("\trunProg3Button created successfully")
 
         # Create Button to delete the current type
-        self.deleteTypeButton = tk.Button(self.frame, text='Delete Type', command=lambda: self.deleteCommandType())
-        self.deleteTypeButton.place(x=287, y=222, width=width-289, height=27)
+        self.runProg4Button = tk.Button(self.frame, text='Run Program 4', command=lambda: self.runProgram(4))
+        self.runProg4Button.place(x=287, y=222, width=width-289, height=27)
         if self.log:
-            print("\tdeleteTypeButton created successfully.")
+            print("\trunProg4Button created successfully.")
 
         # Create load program button
-        self.loadProgramButton = tk.Button(self.frame, text='Load Program', command=lambda: self.loadProgram())
-        self.loadProgramButton.place(x=287, y=252, width=width-289, height=27)
+        self.stopButton = tk.Button(self.frame, text='Stop Program', command=lambda: self.stopProgram())
+        self.stopButton.place(x=287, y=252, width=width-289, height=27)
         if self.log:
-            print("\tloadProgramButton created successfully.")
+            print("\tstopButton created successfully.")
 
         # Create Info entry box
         self.info = tk.StringVar(self.frame)
@@ -364,6 +365,20 @@ class MotorControlApp(tk.Frame):
             print("\tX-button action set to quitApp successfully")
 
         self.setup = True
+
+    # Run a program on the VXM
+    def runProgram(self, num):
+        if self.running:
+            self.sendCommand('D,PM%i,R' % num)
+        else:
+            self.sendCommand('E,PM%i,R' % num)
+
+        self.running = True
+
+    # Stop a currently running program on the VXM
+    def stopProgram(self):
+        self.sendCommand('D,Q')
+        self.running = False
 
     # Send a command through the selected serial port
     def sendCommand(self, command=None):
