@@ -385,6 +385,11 @@ class MotorControlApp(tk.Frame):
                     self.info.set('Sending "%s" to %s at %s BAUD...' % (self.currentCommand.get(), port, baud))
                     if self.log:
                         print("\t\tCommand %s sent to %s at %s BAUD." % (self.currentCommand.get(), port, baud))
+                elif isinstance(command, str):
+                    ser.write(command.encode())
+                    self.info.set('Sending "%s" to %s at %s BAUD...' % (command, port, baud))
+                    if self.log:
+                        print("\t\tCommand %s sent to %s at %s BAUD." % (command, port, baud))
                 else:
                     ser.write(command.getCommand().encode())
                     self.info.set('Sending "%s" to %s at %s BAUD...' % (command.getCommand(), port, baud))
@@ -799,8 +804,10 @@ class MotorControlApp(tk.Frame):
                             self.programs[progNum].addCommand(command)
                         # Else set up new program
                         else:
-                            # Compile the program
+                            # Compile and send the program
                             self.programs[progNum].compile()
+                            if self.programs[progNum].getCompiledProgram() != "":
+                                self.sendCommand(self.programs[progNum].getCompiledProgram())
 
                             # Get the program number
                             progNum = int(command.split()[1])
@@ -808,8 +815,9 @@ class MotorControlApp(tk.Frame):
                             # Clear previous program data
                             self.programs[progNum].clear()
 
-                # Compile the program
+                # Compile and send the program
                 self.programs[progNum].compile()
+                self.sendCommand(self.programs[progNum].getCompiledProgram())
 
                 if self.log:
                     print("\tProgram loaded %s successfully." % name)
